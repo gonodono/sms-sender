@@ -20,7 +20,7 @@ internal class ActiveSendTask(id: UUID) : SendTask(id, State.Running) {
 
     fun checkForFatalSmsError() {
         val error = fatalSmsError ?: return
-        throw IllegalStateException("SMS Error: $error")
+        throw IllegalStateException("SMS Error $error")
     }
 
     fun processResultCode(resultCode: Int) {

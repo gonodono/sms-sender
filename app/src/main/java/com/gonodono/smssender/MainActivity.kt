@@ -29,6 +29,7 @@ import kotlinx.coroutines.launch
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
+    // This will just end up blank if the permissions aren't granted.
     override fun onCreate(savedInstanceState: Bundle?) {
         val request =
             registerForActivityResult(RequestMultiplePermissions()) { grants ->

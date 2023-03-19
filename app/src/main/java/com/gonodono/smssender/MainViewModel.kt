@@ -39,14 +39,14 @@ internal class MainViewModel @Inject constructor(
 
     fun queueDemoMessagesAndSend() {
         viewModelScope.launch {
-            val messages = (ShortTexts + LongTexts).map {
+            val messages = (ShortTexts + LongTexts).map { text ->
                 Message(
                     EMULATOR_PORT,
-                    "$it : ${SystemClock.elapsedRealtime()}", // For fake report
+                    "$text, ${SystemClock.elapsedRealtime()}", //For fake report
                     Message.SendStatus.Queued
                 )
             }
-            repository.queueMessagesAndSend(messages)
+            repository.insertMessagesAndSend(messages)
         }
     }
 

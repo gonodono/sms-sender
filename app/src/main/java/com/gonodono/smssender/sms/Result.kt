@@ -34,10 +34,10 @@ class SmsResultReceiver : BroadcastReceiver() {
                         )
                     }
                     ACTION_SMS_DELIVERED -> {
-                        getResultMessageFromIntent(intent)?.let {
+                        getResultMessageFromIntent(intent)?.let { message ->
                             repository.handleDeliveryResult(
                                 messageId,
-                                it.status
+                                message.status
                             )
                         }
                     }

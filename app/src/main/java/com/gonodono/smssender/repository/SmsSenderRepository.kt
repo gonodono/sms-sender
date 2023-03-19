@@ -31,17 +31,17 @@ class SmsSenderRepository(
 
     val latestSendTask = sendTaskDao.latestSendTask
 
-    suspend fun queueMessagesAndSend(messages: List<Message>) {
+    suspend fun insertMessagesAndSend(messages: List<Message>) {
         messageDao.insertMessages(messages)
-        startImmediateSend(context)
+        startImmediateSend()
     }
 
     suspend fun resetFailedAndRetry() {
         messageDao.resetFailedToQueued()
-        startImmediateSend(context)
+        startImmediateSend()
     }
 
-    private fun startImmediateSend(context: Context) {
+    private fun startImmediateSend() {
         val request = OneTimeWorkRequestBuilder<SmsSendWorker>()
             .setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
             .build()
@@ -84,9 +84,9 @@ class SmsSenderRepository(
                                 false
                             }
                         }
-                        .onEach {
+                        .onEach { message ->
                             task.resetForNextMessage()
-                            sendMessage(context, smsManager, it)
+                            sendMessage(context, smsManager, message)
                         }
                         .onCompletion { e ->
                             if (e == null) continuation.resume(Unit)

@@ -24,6 +24,7 @@ internal class SmsSendWorker @AssistedInject constructor(
     private val repository: SmsSenderRepository
 ) : CoroutineWorker(context, workerParams) {
 
+    // This example doesn't actually do anything with these Results
     override suspend fun doWork() = try {
         val succeeded = repository.doSend(applicationContext, id)
         if (succeeded) Result.success() else Result.failure()

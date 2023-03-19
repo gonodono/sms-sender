@@ -38,18 +38,18 @@ internal fun sendMessage(
     val parts = manager.divideMessage(message.body)
     val partCount = parts.size
 
-    val send = arrayListOf<PendingIntent>()
-    val delivery = arrayListOf<PendingIntent?>()
+    val sendIntents = arrayListOf<PendingIntent>()
+    val deliveryIntents = arrayListOf<PendingIntent?>()
 
     for (partNumber in 1..partCount) {
         val isLastPart = partNumber == partCount
-        send += PendingIntent.getBroadcast(
+        sendIntents += PendingIntent.getBroadcast(
             context,
             partNumber,
             createSendIntent(message.id, context, isLastPart),
             RESULT_FLAGS
         )
-        delivery += if (isLastPart) {
+        deliveryIntents += if (isLastPart) {
             PendingIntent.getBroadcast(
                 context,
                 0,
@@ -63,8 +63,8 @@ internal fun sendMessage(
         message.address,
         null,
         parts,
-        send,
-        delivery
+        sendIntents,
+        deliveryIntents
     )
 }
 

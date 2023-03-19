@@ -30,27 +30,28 @@ class FakeDeliveryReporter : BroadcastReceiver() {
         if (Telephony.Sms.Intents.SMS_RECEIVED_ACTION != intent.action) return
         val pendingResult = goAsync()
         scope.launch {
-            val parts = Telephony.Sms.Intents.getMessagesFromIntent(intent)
-            if (parts.isNullOrEmpty()) return@launch
+            try {
+                val parts = Telephony.Sms.Intents.getMessagesFromIntent(intent)
+                // Assumes everything will decode correctly in testing
+                val address = parts[0].displayOriginatingAddress
+                val body = parts.joinToString("") { it.displayMessageBody }
 
-            // Assumes everything will decode correctly in testing
-            val address = parts[0].displayOriginatingAddress
-            val body = parts.joinToString("") { it.displayMessageBody }
-
-            val message = repository.checkForFakeDeliveryReport(
-                // Emulator address comes as a fake #; e.g. (555) 521-PORT
-                address.takeLast(EMULATOR_PORT.length),
-                body
-            )
-            if (message != null) {
-                sendFakeDeliveryReport(
-                    context,
-                    message.id,
-                    message.address,
-                    Telephony.Sms.STATUS_COMPLETE  // or _FAILED or _PENDING
+                val message = repository.checkForFakeDeliveryReport(
+                    // Emulator address comes as a fake #; e.g. (555) 521-PORT
+                    address.takeLast(EMULATOR_PORT.length),
+                    body
                 )
+                if (message != null) {
+                    sendFakeDeliveryReport(
+                        context,
+                        message.id,
+                        message.address,
+                        Telephony.Sms.STATUS_COMPLETE  // or _FAILED or _PENDING
+                    )
+                }
+            } finally {
+                pendingResult.finish()
             }
-            pendingResult.finish()
         }
     }
 }
@@ -69,8 +70,7 @@ private fun sendFakeDeliveryReport(
     )
 }
 
-// Naively reversed from
-// https://android.googlesource.com/platform/frameworks/base/+/ff3030932afbbed8532d4af832ffe4d474e4bb8b/telephony/java/com/android/internal/telephony/gsm/SmsMessage.java#1264
+// Naively reversed from https://android.googlesource.com/platform/frameworks/base/+/ff3030932afbbed8532d4af832ffe4d474e4bb8b/telephony/java/com/android/internal/telephony/gsm/SmsMessage.java#1264
 private fun createStatusReportPdu(
     address: String,
     status: Int
@@ -91,8 +91,7 @@ private fun createStatusReportPdu(
     write(status)
 }.toByteArray()
 
-// Adapted from
-// https://android.googlesource.com/platform/frameworks/base/+/ff3030932afbbed8532d4af832ffe4d474e4bb8b/telephony/java/com/android/internal/telephony/gsm/SmsMessage.java#804
+// Adapted from https://android.googlesource.com/platform/frameworks/base/+/ff3030932afbbed8532d4af832ffe4d474e4bb8b/telephony/java/com/android/internal/telephony/gsm/SmsMessage.java#804
 private fun createTimestamp(date: Long): ByteArray {
     val zonedDateTime =
         Instant.ofEpochMilli(date).atZone(ZoneId.systemDefault())
