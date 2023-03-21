@@ -23,8 +23,9 @@ object RepositoryModule {
     @Provides
     fun provideRepository(
         @ApplicationContext context: Context,
+        scope: CoroutineScope,
         database: SmsSenderDatabase
-    ) = SmsSenderRepository(context, database)
+    ) = SmsSenderRepository(context, scope, database)
 }
 
 @Module

@@ -10,7 +10,6 @@ import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.ForegroundInfo
 import androidx.work.WorkerParameters
-import androidx.work.workDataOf
 import com.gonodono.smssender.R
 import com.gonodono.smssender.repository.SmsSenderRepository
 import dagger.assisted.Assisted
@@ -24,13 +23,8 @@ internal class SmsSendWorker @AssistedInject constructor(
     private val repository: SmsSenderRepository
 ) : CoroutineWorker(context, workerParams) {
 
-    // This example doesn't actually do anything with these Results
-    override suspend fun doWork() = try {
-        val succeeded = repository.doSend(applicationContext, id)
-        if (succeeded) Result.success() else Result.failure()
-    } catch (e: Exception) {
-        Result.failure(workDataOf("unhandled" to e.toString()))
-    }
+    override suspend fun doWork() =
+        if (repository.doSend(id)) Result.success() else Result.failure()
 
     override suspend fun getForegroundInfo() =
         ForegroundInfo(420, createNotification(applicationContext))

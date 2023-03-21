@@ -49,9 +49,10 @@ class FakeDeliveryReporter : BroadcastReceiver() {
                         Telephony.Sms.STATUS_COMPLETE  // or _FAILED or _PENDING
                     )
                 }
-            } finally {
-                pendingResult.finish()
+            } catch (e: Exception) {
+                e.printStackTrace()
             }
+            pendingResult.finish()
         }
     }
 }

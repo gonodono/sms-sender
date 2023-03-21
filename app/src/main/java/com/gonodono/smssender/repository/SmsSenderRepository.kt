@@ -9,6 +9,7 @@ import androidx.work.WorkManager
 import com.gonodono.smssender.data.Message
 import com.gonodono.smssender.data.Message.DeliveryStatus
 import com.gonodono.smssender.data.Message.SendStatus
+import com.gonodono.smssender.data.SendTask
 import com.gonodono.smssender.data.SmsSenderDatabase
 import com.gonodono.smssender.sms.getSmsManager
 import com.gonodono.smssender.sms.sendMessage
@@ -17,10 +18,10 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import java.util.*
 import kotlin.coroutines.resume
-import kotlin.coroutines.resumeWithException
 
 class SmsSenderRepository(
     private val context: Context,
+    private val scope: CoroutineScope,
     database: SmsSenderDatabase
 ) {
     private val messageDao = database.messageDao
@@ -49,55 +50,46 @@ class SmsSenderRepository(
             .enqueueUniqueWork("SmsSend", ExistingWorkPolicy.KEEP, request)
     }
 
-    private var activeSendTask: ActiveSendTask? = null
+    private val errors = SmsErrors(context)
 
-    suspend fun doSend(context: Context, id: UUID): Boolean {
-        val task = ActiveSendTask(id)
+    suspend fun doSend(id: UUID): Boolean {
+        val task = SendTask(id)
         sendTaskDao.insert(task)
-        activeSendTask = task
+        errors.resetForNextTask()
 
-        send(context, task)
-
-        activeSendTask = null
-        sendTaskDao.update(task)
-        return task.succeeded
-    }
-
-    private suspend fun send(context: Context, task: ActiveSendTask) {
-        try {
-            suspendCancellableCoroutine { continuation ->
-                val scope = CoroutineScope(Dispatchers.IO)
-                val exceptionHandler = CoroutineExceptionHandler { _, e ->
-                    scope.cancel()
-                    continuation.resumeWithException(e)
-                }
-                scope.launch(exceptionHandler) {
-                    val smsManager = getSmsManager(context)
-                    messageDao.nextQueuedMessage
-                        .distinctUntilChanged()
-                        .transformWhile { message ->
-                            task.checkForFatalSmsError()
-                            if (message != null) {
-                                emit(message)
-                                true
-                            } else {
+        suspendCancellableCoroutine { continuation ->
+            scope.launch {
+                val smsManager = getSmsManager(context)
+                messageDao.nextQueuedMessage
+                    .distinctUntilChanged()
+                    .transformWhile { message ->
+                        when {
+                            errors.hadFatalSmsError -> {
+                                task.state = SendTask.State.Failed
+                                task.error = errors.createFatalMessage()
                                 false
                             }
+                            message == null -> {
+                                task.state = SendTask.State.Succeeded
+                                false
+                            }
+                            else -> {
+                                emit(message)
+                                true
+                            }
                         }
-                        .onEach { message ->
-                            task.resetForNextMessage()
-                            sendMessage(context, smsManager, message)
-                        }
-                        .onCompletion { e ->
-                            if (e == null) continuation.resume(Unit)
-                        }
-                        .collect()
-                }
+                    }
+                    .onEach { message ->
+                        errors.resetForNextMessage()
+                        sendMessage(context, smsManager, message)
+                    }
+                    .onCompletion { continuation.resume(Unit) }
+                    .collect()
             }
-            task.setError(null)
-        } catch (e: Throwable) {
-            task.setError(e)
         }
+
+        sendTaskDao.update(task)
+        return task.state == SendTask.State.Succeeded
     }
 
     suspend fun handleSendResult(
@@ -105,14 +97,12 @@ class SmsSenderRepository(
         resultCode: Int,
         isLastPart: Boolean
     ) {
-        val task = activeSendTask ?: throw IllegalStateException("Zounds!")
-        task.processResultCode(resultCode)
+        errors.processResultCode(resultCode)
         if (isLastPart) {
-            val status = when {
-                task.hadSmsError -> SendStatus.Failed
-                else -> SendStatus.Sent
-            }
-            messageDao.updateSendStatus(messageId, status)
+            messageDao.updateSendStatus(
+                messageId,
+                if (errors.hadSmsError) SendStatus.Failed else SendStatus.Sent
+            )
         }
     }
 

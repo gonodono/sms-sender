@@ -24,27 +24,24 @@ class SmsResultReceiver : BroadcastReceiver() {
         val messageId = intent.data?.fragment?.toIntOrNull() ?: return
         val pendingResult = goAsync()
         scope.launch {
-            try {
-                when (intent.action) {
-                    ACTION_SMS_SENT -> {
-                        repository.handleSendResult(
+            when (intent.action) {
+                ACTION_SMS_SENT -> {
+                    repository.handleSendResult(
+                        messageId,
+                        pendingResult.resultCode,
+                        intent.getBooleanExtra(EXTRA_IS_LAST_PART, false)
+                    )
+                }
+                ACTION_SMS_DELIVERED -> {
+                    getResultMessageFromIntent(intent)?.let { message ->
+                        repository.handleDeliveryResult(
                             messageId,
-                            pendingResult.resultCode,
-                            intent.getBooleanExtra(EXTRA_IS_LAST_PART, false)
+                            message.status
                         )
                     }
-                    ACTION_SMS_DELIVERED -> {
-                        getResultMessageFromIntent(intent)?.let { message ->
-                            repository.handleDeliveryResult(
-                                messageId,
-                                message.status
-                            )
-                        }
-                    }
                 }
-            } finally {
-                pendingResult.finish()
             }
+            pendingResult.finish()
         }
     }
 }

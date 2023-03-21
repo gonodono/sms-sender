@@ -7,10 +7,10 @@ import java.util.*
 
 
 @Entity(tableName = "send_tasks")
-open class SendTask(
+class SendTask(
     @PrimaryKey
     val id: UUID,
-    var state: State? = null,
+    var state: State = State.Running,
     var error: String? = null
 ) {
     enum class State { Running, Succeeded, Failed }
