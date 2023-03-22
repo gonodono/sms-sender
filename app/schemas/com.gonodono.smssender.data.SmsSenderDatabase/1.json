@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "db27498ac92ca08f9378798aa1a78710",
+    "identityHash": "6fe09ef6377b5ec724c8e5e8bba18971",
     "entities": [
       {
         "tableName": "messages",
@@ -50,7 +50,7 @@
       },
       {
         "tableName": "send_tasks",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` BLOB NOT NULL, `state` TEXT, `error` TEXT, PRIMARY KEY(`id`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` BLOB NOT NULL, `state` TEXT NOT NULL, `error` TEXT, PRIMARY KEY(`id`))",
         "fields": [
           {
             "fieldPath": "id",
@@ -62,7 +62,7 @@
             "fieldPath": "state",
             "columnName": "state",
             "affinity": "TEXT",
-            "notNull": false
+            "notNull": true
           },
           {
             "fieldPath": "error",
@@ -84,7 +84,7 @@
     "views": [],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'db27498ac92ca08f9378798aa1a78710')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '6fe09ef6377b5ec724c8e5e8bba18971')"
     ]
   }
 }

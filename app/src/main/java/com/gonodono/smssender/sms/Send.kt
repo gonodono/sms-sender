@@ -37,7 +37,6 @@ internal fun sendMessage(
 ) {
     val parts = manager.divideMessage(message.body)
     val partCount = parts.size
-
     val sendIntents = arrayListOf<PendingIntent>()
     val deliveryIntents = arrayListOf<PendingIntent?>()
 

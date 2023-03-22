@@ -1,7 +1,5 @@
 package com.gonodono.smssender
 
-import android.Manifest.permission.RECEIVE_SMS
-import android.Manifest.permission.SEND_SMS
 import android.content.pm.PackageManager.PERMISSION_GRANTED
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -21,6 +19,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.flowWithLifecycle
 import androidx.lifecycle.lifecycleScope
+import com.gonodono.smssender.sms.SmsPermissions
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.onEach
@@ -38,8 +37,7 @@ class MainActivity : ComponentActivity() {
 
         super.onCreate(savedInstanceState)
 
-        // RECEIVE_SMS is used only for the fake delivery report.
-        val permissions = arrayOf(SEND_SMS, RECEIVE_SMS)
+        val permissions = SmsPermissions
         if (permissions.any { checkSelfPermission(it) != PERMISSION_GRANTED }) {
             request.launch(permissions)
         } else {

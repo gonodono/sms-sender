@@ -14,8 +14,10 @@ import com.gonodono.smssender.data.SmsSenderDatabase
 import com.gonodono.smssender.sms.getSmsManager
 import com.gonodono.smssender.sms.sendMessage
 import com.gonodono.smssender.work.SmsSendWorker
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.suspendCancellableCoroutine
 import java.util.*
 import kotlin.coroutines.resume
 
@@ -114,8 +116,4 @@ class SmsSenderRepository(
         }
         messageDao.updateDeliveryStatus(messageId, status)
     }
-
-    // TESTING ONLY!!
-    suspend fun checkForFakeDeliveryReport(address: String, body: String) =
-        messageDao.checkForFakeDeliveryReport(address, body)
 }

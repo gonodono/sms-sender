@@ -22,6 +22,7 @@ class SmsResultReceiver : BroadcastReceiver() {
 
     override fun onReceive(context: Context, intent: Intent) {
         val messageId = intent.data?.fragment?.toIntOrNull() ?: return
+
         val pendingResult = goAsync()
         scope.launch {
             when (intent.action) {
@@ -33,7 +34,8 @@ class SmsResultReceiver : BroadcastReceiver() {
                     )
                 }
                 ACTION_SMS_DELIVERED -> {
-                    getResultMessageFromIntent(intent)?.let { message ->
+                    val message = getResultMessageFromIntent(intent)
+                    if (message != null) {
                         repository.handleDeliveryResult(
                             messageId,
                             message.status

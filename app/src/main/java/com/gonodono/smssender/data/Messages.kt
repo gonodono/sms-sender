@@ -32,7 +32,7 @@ class Message(
 }
 
 @Dao
-interface MessageDao {
+interface BaseMessageDao {
     @get:Query("SELECT * FROM messages ORDER BY id DESC")
     val allMessages: Flow<List<Message>>
 
@@ -56,14 +56,4 @@ interface MessageDao {
                 "send_status='Failed' OR delivery_status='Failed'"
     )
     suspend fun resetFailedToQueued()
-
-    // TESTING ONLY!!
-    @Query(
-        "SELECT * FROM messages WHERE address=:address AND " +
-                "body=:body AND delivery_status IS NULL LIMIT 1"
-    )
-    suspend fun checkForFakeDeliveryReport(
-        address: String,
-        body: String
-    ): Message?
 }

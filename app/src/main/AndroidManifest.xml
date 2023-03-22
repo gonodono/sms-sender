@@ -4,9 +4,6 @@
 
     <uses-permission android:name="android.permission.SEND_SMS" />
 
-    <!-- RECEIVE_SMS is used only for the fake delivery report. -->
-    <uses-permission android:name="android.permission.RECEIVE_SMS" />
-
     <application
         android:name=".injection.SmsSenderApplication"
         android:icon="@mipmap/ic_launcher"
@@ -30,16 +27,6 @@
             tools:node="remove" />
 
         <receiver android:name=".sms.SmsResultReceiver" />
-
-        <!-- TESTING ONLY!! -->
-        <receiver
-            android:name=".sms.FakeDeliveryReporter"
-            android:exported="true"
-            android:permission="android.permission.BROADCAST_SMS">
-            <intent-filter>
-                <action android:name="android.provider.Telephony.SMS_RECEIVED" />
-            </intent-filter>
-        </receiver>
 
     </application>
 

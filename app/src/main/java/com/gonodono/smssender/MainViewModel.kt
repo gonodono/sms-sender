@@ -1,6 +1,5 @@
 package com.gonodono.smssender
 
-import android.os.SystemClock
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.gonodono.smssender.data.Message
@@ -40,11 +39,7 @@ internal class MainViewModel @Inject constructor(
     fun queueDemoMessagesAndSend() {
         viewModelScope.launch {
             val messages = (ShortTexts + LongTexts).map { text ->
-                Message(
-                    EMULATOR_PORT,
-                    "$text, ${SystemClock.elapsedRealtime()}", //For fake report
-                    Message.SendStatus.Queued
-                )
+                Message(EMULATOR_PORT, text, Message.SendStatus.Queued)
             }
             repository.insertMessagesAndSend(messages)
         }

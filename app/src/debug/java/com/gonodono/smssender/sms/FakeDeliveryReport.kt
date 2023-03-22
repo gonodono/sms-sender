@@ -6,7 +6,7 @@ import android.content.Intent
 import android.provider.Telephony
 import android.telephony.PhoneNumberUtils
 import com.gonodono.smssender.EMULATOR_PORT
-import com.gonodono.smssender.repository.SmsSenderRepository
+import com.gonodono.smssender.data.SmsSenderDatabase
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -16,7 +16,6 @@ import java.time.ZoneId
 import javax.inject.Inject
 
 
-// TESTING ONLY!!
 @AndroidEntryPoint
 class FakeDeliveryReporter : BroadcastReceiver() {
 
@@ -24,33 +23,29 @@ class FakeDeliveryReporter : BroadcastReceiver() {
     lateinit var scope: CoroutineScope
 
     @Inject
-    lateinit var repository: SmsSenderRepository
+    lateinit var database: SmsSenderDatabase
 
     override fun onReceive(context: Context, intent: Intent) {
         if (Telephony.Sms.Intents.SMS_RECEIVED_ACTION != intent.action) return
         val pendingResult = goAsync()
         scope.launch {
-            try {
-                val parts = Telephony.Sms.Intents.getMessagesFromIntent(intent)
-                // Assumes everything will decode correctly in testing
-                val address = parts[0].displayOriginatingAddress
-                val body = parts.joinToString("") { it.displayMessageBody }
+            val parts = Telephony.Sms.Intents.getMessagesFromIntent(intent)
+            // Assumes everything will decode correctly in testing
+            val address = parts[0].displayOriginatingAddress
+            val body = parts.joinToString("") { it.displayMessageBody }
 
-                val message = repository.checkForFakeDeliveryReport(
-                    // Emulator address comes as a fake #; e.g. (555) 521-PORT
-                    address.takeLast(EMULATOR_PORT.length),
-                    body
+            val message = database.messageDao.checkForFakeDeliveryReport(
+                // Emulator address comes as a fake #; e.g. (555) 521-PORT
+                address.takeLast(EMULATOR_PORT.length),
+                body
+            )
+            if (message != null) {
+                sendFakeDeliveryReport(
+                    context,
+                    message.id,
+                    message.address,
+                    Telephony.Sms.STATUS_COMPLETE  // or _FAILED or _PENDING
                 )
-                if (message != null) {
-                    sendFakeDeliveryReport(
-                        context,
-                        message.id,
-                        message.address,
-                        Telephony.Sms.STATUS_COMPLETE  // or _FAILED or _PENDING
-                    )
-                }
-            } catch (e: Exception) {
-                e.printStackTrace()
             }
             pendingResult.finish()
         }
