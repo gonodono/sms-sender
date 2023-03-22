@@ -29,16 +29,12 @@ class FakeDeliveryReporter : BroadcastReceiver() {
         if (Telephony.Sms.Intents.SMS_RECEIVED_ACTION != intent.action) return
         val pendingResult = goAsync()
         scope.launch {
-            val parts = Telephony.Sms.Intents.getMessagesFromIntent(intent)
             // Assumes everything will decode correctly in testing
-            val address = parts[0].displayOriginatingAddress
+            val parts = Telephony.Sms.Intents.getMessagesFromIntent(intent)
             val body = parts.joinToString("") { it.displayMessageBody }
 
-            val message = database.messageDao.checkForFakeDeliveryReport(
-                // Emulator address comes as a fake #; e.g. (555) 521-PORT
-                address.takeLast(EMULATOR_PORT.length),
-                body
-            )
+            val message = database.messageDao
+                .checkForFakeDeliveryReport(EMULATOR_PORT, body)
             if (message != null) {
                 sendFakeDeliveryReport(
                     context,
