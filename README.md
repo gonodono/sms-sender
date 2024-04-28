@@ -1,9 +1,8 @@
 # SMS Sender
 
-A complete working example to supplement the demonstration of `SmsManager`'s
-results mechanism shown
-in [this Stack Overflow answer](https://stackoverflow.com/a/24845193). An
-overview of this project can be found at the end of that post.
+A complete working example to supplement the coverage of `SmsManager`'s results
+mechanism shown in [this Stack Overflow answer](https://stackoverflow.com/a/24845193). An overview of this
+project can be found at the end of that post.
 
 ---
 
