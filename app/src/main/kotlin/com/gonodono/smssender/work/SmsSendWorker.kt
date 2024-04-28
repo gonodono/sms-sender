@@ -15,9 +15,8 @@ import com.gonodono.smssender.repository.SmsSenderRepository
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 
-
 @HiltWorker
-internal class SmsSendWorker @AssistedInject constructor(
+class SmsSendWorker @AssistedInject constructor(
     @Assisted context: Context,
     @Assisted workerParams: WorkerParameters,
     private val repository: SmsSenderRepository

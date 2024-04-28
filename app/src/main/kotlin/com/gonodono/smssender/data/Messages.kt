@@ -1,11 +1,14 @@
 package com.gonodono.smssender.data
 
-import androidx.room.*
+import androidx.room.ColumnInfo
+import androidx.room.Dao
+import androidx.room.Entity
+import androidx.room.Insert
+import androidx.room.PrimaryKey
+import androidx.room.Query
 import com.gonodono.smssender.data.Message.DeliveryStatus
 import com.gonodono.smssender.data.Message.SendStatus
 import kotlinx.coroutines.flow.Flow
-import java.util.*
-
 
 @Entity(tableName = "messages")
 class Message(

@@ -10,7 +10,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-
 @AndroidEntryPoint
 class SmsResultReceiver : BroadcastReceiver() {
 
@@ -33,6 +32,7 @@ class SmsResultReceiver : BroadcastReceiver() {
                         intent.getBooleanExtra(EXTRA_IS_LAST_PART, false)
                     )
                 }
+
                 ACTION_SMS_DELIVERED -> {
                     val message = getResultMessageFromIntent(intent)
                     if (message != null) {

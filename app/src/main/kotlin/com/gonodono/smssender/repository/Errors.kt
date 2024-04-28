@@ -4,12 +4,10 @@ import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Context
 import android.telephony.SmsManager
-import java.util.*
-
 
 internal class SmsErrors(context: Context) {
 
-    // These errors are persisted for the slim chance that the app is killed in
+    // These errors are persisted on the off chance that the app is killed in
     // the time between a send and the receipt of its results. Tying them to the
     // task instance would've made retrieval unwieldy for that case, and we
     // don't need the specific errors in messages, so this seemed appropriate.

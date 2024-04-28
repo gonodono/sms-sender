@@ -15,10 +15,14 @@ import com.gonodono.smssender.sms.getSmsManager
 import com.gonodono.smssender.sms.sendMessage
 import com.gonodono.smssender.work.SmsSendWorker
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.onCompletion
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.transformWhile
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
-import java.util.*
+import java.util.UUID
 import kotlin.coroutines.resume
 
 class SmsSenderRepository(
@@ -71,10 +75,12 @@ class SmsSenderRepository(
                                 task.error = errors.createFatalMessage()
                                 false
                             }
+
                             message == null -> {
                                 task.state = SendTask.State.Succeeded
                                 false
                             }
+
                             else -> {
                                 emit(message)
                                 true

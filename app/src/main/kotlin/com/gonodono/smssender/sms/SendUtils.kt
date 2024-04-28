@@ -8,8 +8,6 @@ import android.os.Build
 import android.telephony.SmsManager
 import com.gonodono.smssender.BuildConfig
 import com.gonodono.smssender.data.Message
-import java.util.*
-
 
 internal const val ACTION_SMS_SENT =
     "${BuildConfig.APPLICATION_ID}.action.SMS_SENT"
@@ -24,6 +22,7 @@ internal fun getSmsManager(context: Context): SmsManager = when {
     Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
         context.getSystemService(SmsManager::class.java)
     }
+
     else -> {
         @Suppress("DEPRECATION")
         SmsManager.getDefault()

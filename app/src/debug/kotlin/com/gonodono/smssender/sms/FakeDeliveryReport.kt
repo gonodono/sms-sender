@@ -15,7 +15,6 @@ import java.time.Instant
 import java.time.ZoneId
 import javax.inject.Inject
 
-
 @AndroidEntryPoint
 class FakeDeliveryReporter : BroadcastReceiver() {
 
@@ -27,6 +26,7 @@ class FakeDeliveryReporter : BroadcastReceiver() {
 
     override fun onReceive(context: Context, intent: Intent) {
         if (Telephony.Sms.Intents.SMS_RECEIVED_ACTION != intent.action) return
+
         val pendingResult = goAsync()
         scope.launch {
             // Assumes everything will decode correctly in testing

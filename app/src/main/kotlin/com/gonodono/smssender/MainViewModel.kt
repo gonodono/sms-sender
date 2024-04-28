@@ -10,9 +10,8 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-
 internal sealed interface UiState {
-    object Loading : UiState
+    data object Loading : UiState
     data class Active(
         val messages: String,
         val isSending: Boolean,
