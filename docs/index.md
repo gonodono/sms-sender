@@ -1,1 +1,0 @@
-# SMS Sender temporary docs stub
