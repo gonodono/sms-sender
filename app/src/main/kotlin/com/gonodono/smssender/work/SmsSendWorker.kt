@@ -22,10 +22,10 @@ class SmsSendWorker @AssistedInject constructor(
     private val repository: SmsSenderRepository
 ) : CoroutineWorker(context, workerParams) {
 
-    override suspend fun doWork() =
+    override suspend fun doWork(): Result =
         if (repository.doSend(id)) Result.success() else Result.failure()
 
-    override suspend fun getForegroundInfo() =
+    override suspend fun getForegroundInfo(): ForegroundInfo =
         ForegroundInfo(420, createNotification(applicationContext))
 }
 

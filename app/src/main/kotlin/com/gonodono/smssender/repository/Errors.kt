@@ -3,6 +3,7 @@ package com.gonodono.smssender.repository
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Context
+import android.content.SharedPreferences
 import android.telephony.SmsManager
 
 internal class SmsErrors(context: Context) {
@@ -12,7 +13,7 @@ internal class SmsErrors(context: Context) {
     // task instance would've made retrieval unwieldy for that case, and we
     // don't need the specific errors in messages, so this seemed appropriate.
 
-    private val preferences =
+    private val preferences: SharedPreferences =
         context.getSharedPreferences("sms_errors.xml", Context.MODE_PRIVATE)
 
     private var fatalSmsError: Int
@@ -48,7 +49,7 @@ internal class SmsErrors(context: Context) {
 
     val hadFatalSmsError: Boolean get() = fatalSmsError != SMS_ERROR_NONE
 
-    fun createFatalMessage() = "SMS Error $fatalSmsError"
+    fun createFatalMessage(): String = "SMS Error $fatalSmsError"
 }
 
 private const val PREF_FATAL_SMS_ERROR = "fatal_sms_error"

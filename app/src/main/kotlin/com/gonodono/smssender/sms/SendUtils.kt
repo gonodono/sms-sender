@@ -23,10 +23,7 @@ internal fun getSmsManager(context: Context): SmsManager = when {
         context.getSystemService(SmsManager::class.java)
     }
 
-    else -> {
-        @Suppress("DEPRECATION")
-        SmsManager.getDefault()
-    }
+    else -> @Suppress("DEPRECATION") SmsManager.getDefault()
 }
 
 internal fun sendMessage(

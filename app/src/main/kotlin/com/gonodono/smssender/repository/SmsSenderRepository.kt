@@ -15,6 +15,7 @@ import com.gonodono.smssender.sms.getSmsManager
 import com.gonodono.smssender.sms.sendMessage
 import com.gonodono.smssender.work.SmsSendWorker
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.onCompletion
@@ -34,9 +35,9 @@ class SmsSenderRepository(
 
     private val sendTaskDao = database.sendTaskDao
 
-    val allMessages = messageDao.allMessages
+    val allMessages: Flow<List<Message>> = messageDao.allMessages
 
-    val latestSendTask = sendTaskDao.latestSendTask
+    val latestSendTask: Flow<SendTask?> = sendTaskDao.latestSendTask
 
     suspend fun insertMessagesAndSend(messages: List<Message>) {
         messageDao.insertMessages(messages)

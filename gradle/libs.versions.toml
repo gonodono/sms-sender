@@ -1,20 +1,20 @@
 [versions]
-androidGradlePlugin = "8.3.2"
-appCompat = "1.6.1"
+androidGradlePlugin = "8.4.1"
+appCompat = "1.7.0"
 activityKtx = "1.9.0"
-composeBom = "2024.04.01"
-coreKtx = "1.13.0"
+composeBom = "2024.05.00"
+coreKtx = "1.13.1"
 desugar = "2.0.4"
 hiltAndroid = "2.51"
 hiltAndroidX = "1.2.0"
 hiltAndroidxWork = "1.2.0"
 hiltPlugin = "2.51.1"
-kotlinPlugin = "1.9.23"
-kspPlugin = "1.9.23-1.0.20"
-lifecycleRuntimeKtx = "2.7.0"
+kotlinPlugin = "1.9.24"
+#noinspection GradleDependency  Needs to match kotlinPlugin
+kspPlugin = "1.9.24-1.0.20"
+lifecycleRuntimeKtx = "2.8.1"
 room = "2.6.1"
-#noinspection GradleDependency  https://issuetracker.google.com/issues/330991929
-workRuntimeKtx = "2.8.0"
+workRuntimeKtx = "2.9.0"
 
 [libraries]
 core-ktx = { module = "androidx.core:core-ktx", version.ref = "coreKtx" }
@@ -24,7 +24,7 @@ activity-ktx = { module = "androidx.activity:activity-ktx", version.ref = "activ
 desugar-jdk-libs = { module = "com.android.tools:desugar_jdk_libs", version.ref = "desugar" }
 lifecycle-runtime-ktx = { module = "androidx.lifecycle:lifecycle-runtime-ktx", version.ref = "lifecycleRuntimeKtx" }
 
-compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }
+compose-bom = { module = "androidx.compose:compose-bom", version.ref = "composeBom" }
 compose-ui = { group = "androidx.compose.ui", name = "ui" }
 compose-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest" }
 compose-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling" }

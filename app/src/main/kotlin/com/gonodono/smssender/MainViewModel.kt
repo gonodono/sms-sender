@@ -6,25 +6,17 @@ import com.gonodono.smssender.data.Message
 import com.gonodono.smssender.data.SendTask
 import com.gonodono.smssender.repository.SmsSenderRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import javax.inject.Inject
-
-internal sealed interface UiState {
-    data object Loading : UiState
-    data class Active(
-        val messages: String,
-        val isSending: Boolean,
-        val lastError: String?
-    ) : UiState
-}
 
 @HiltViewModel
 internal class MainViewModel @Inject constructor(
     private val repository: SmsSenderRepository
 ) : ViewModel() {
 
-    val uiState = combine(
+    val uiState: Flow<UiState> = combine(
         repository.allMessages,
         repository.latestSendTask
     ) { messages, task ->
@@ -49,15 +41,24 @@ internal class MainViewModel @Inject constructor(
     }
 }
 
-private fun itemize(messages: List<Message>) =
+internal sealed interface UiState {
+    data object Loading : UiState
+    data class Active(
+        val messages: String,
+        val isSending: Boolean,
+        val lastError: String?
+    ) : UiState
+}
+
+private fun itemize(messages: List<Message>): String =
     messages.joinToString("\n\n") { it.toDebugString() }
 
-private fun Message.toDebugString() =
+private fun Message.toDebugString(): String =
     "#%d: to=%s, ss=%s, ds=%s".format(id, address, sendStatus, deliveryStatus)
 
-private val ShortTexts = arrayOf("Hi!", "Hello!", "Howdy!")
+private val ShortTexts: List<String> = listOf("Hi!", "Hello!", "Howdy!")
 
-private val LongTexts = arrayOf(
+private val LongTexts: List<String> = listOf(
     "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod" +
             " tempor incididunt ut labore et dolore magna aliqua. Ut enim ad" +
             " minim veniam, quis nostrud exercitation ullamco laboris nisi ut" +
