@@ -21,7 +21,8 @@ internal class MainViewModel @Inject constructor(
         repository.latestSendTask
     ) { messages, task ->
         UiState.Active(
-            itemize(messages),
+            messages.map { it.toMessageInfo() },
+            messages.count { it.isFailed },
             task?.state == SendTask.State.Running,
             task?.error
         )
@@ -42,19 +43,31 @@ internal class MainViewModel @Inject constructor(
 }
 
 internal sealed interface UiState {
+
     data object Loading : UiState
+
     data class Active(
-        val messages: String,
+        val messages: List<MessageInfo>,
+        val failedCount: Int,
         val isSending: Boolean,
         val lastError: String?
     ) : UiState
 }
 
-private fun itemize(messages: List<Message>): String =
-    messages.joinToString("\n\n") { it.toDebugString() }
+internal class MessageInfo(
+    val id: String,
+    val address: String,
+    val sendStatus: String,
+    val deliveryStatus: String
+)
 
-private fun Message.toDebugString(): String =
-    "#%d: to=%s, ss=%s, ds=%s".format(id, address, sendStatus, deliveryStatus)
+private fun Message.toMessageInfo() =
+    MessageInfo(
+        id.toString(),
+        address,
+        sendStatus.toString(),
+        deliveryStatus.toString()
+    )
 
 private val ShortTexts: List<String> = listOf("Hi!", "Hello!", "Howdy!")
 

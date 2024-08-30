@@ -18,26 +18,28 @@ internal const val ACTION_SMS_DELIVERED =
 internal const val EXTRA_IS_LAST_PART =
     "${BuildConfig.APPLICATION_ID}.extra.IS_LAST_PART"
 
-internal fun getSmsManager(context: Context): SmsManager = when {
+internal fun Context.getSmsManager(): SmsManager = when {
     Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-        context.getSystemService(SmsManager::class.java)
+        getSystemService(SmsManager::class.java)
     }
-
     else -> @Suppress("DEPRECATION") SmsManager.getDefault()
 }
 
-internal fun sendMessage(
-    context: Context,
-    manager: SmsManager,
-    message: Message
-) {
+internal sealed class SendResult {
+    data object Success : SendResult()
+    data class Error(val e: Throwable) : SendResult() {
+        override fun toString() = "${e.javaClass.simpleName}: ${e.message}"
+    }
+}
+
+internal fun sendMessage(context: Context, message: Message): SendResult {
+    val manager = context.getSmsManager()
     val parts = manager.divideMessage(message.body)
-    val partCount = parts.size
     val sendIntents = arrayListOf<PendingIntent>()
     val deliveryIntents = arrayListOf<PendingIntent?>()
 
-    for (partNumber in 1..partCount) {
-        val isLastPart = partNumber == partCount
+    for (partNumber in 1..parts.size) {
+        val isLastPart = partNumber == parts.size
         sendIntents += PendingIntent.getBroadcast(
             context,
             partNumber,
@@ -54,13 +56,18 @@ internal fun sendMessage(
         } else null
     }
 
-    manager.sendMultipartTextMessage(
-        message.address,
-        null,
-        parts,
-        sendIntents,
-        deliveryIntents
-    )
+    return try {
+        manager.sendMultipartTextMessage(
+            message.address,
+            null,
+            parts,
+            sendIntents,
+            deliveryIntents
+        )
+        SendResult.Success
+    } catch (e: Exception) {
+        SendResult.Error(e)
+    }
 }
 
 private fun createSendIntent(

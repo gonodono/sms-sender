@@ -13,20 +13,20 @@ internal class SmsErrors(context: Context) {
     // task instance would've made retrieval unwieldy for that case, and we
     // don't need the specific errors in messages, so this seemed appropriate.
 
-    private val preferences: SharedPreferences =
-        context.getSharedPreferences("sms_errors.xml", Context.MODE_PRIVATE)
+    private val errors: SharedPreferences =
+        context.getSharedPreferences("sms_errors", Context.MODE_PRIVATE)
 
     private var fatalSmsError: Int
-        get() = preferences.getInt(PREF_FATAL_SMS_ERROR, SMS_ERROR_NONE)
-        set(value) {
-            preferences.edit().putInt(PREF_FATAL_SMS_ERROR, value).apply()
-        }
+        get() = errors.getInt(PREF_FATAL_SMS_ERROR, SMS_ERROR_NONE)
+        set(value) = errors.edit().putInt(PREF_FATAL_SMS_ERROR, value).apply()
 
     private var lastSmsError: Int
-        get() = preferences.getInt(PREF_LAST_SMS_ERROR, SMS_ERROR_NONE)
-        set(value) {
-            preferences.edit().putInt(PREF_LAST_SMS_ERROR, value).apply()
-        }
+        get() = errors.getInt(PREF_LAST_SMS_ERROR, SMS_ERROR_NONE)
+        set(value) = errors.edit().putInt(PREF_LAST_SMS_ERROR, value).apply()
+
+    val hadFatalSmsError: Boolean get() = fatalSmsError != SMS_ERROR_NONE
+
+    val hadSmsError: Boolean get() = lastSmsError != SMS_ERROR_NONE
 
     fun resetForNextTask() {
         fatalSmsError = SMS_ERROR_NONE
@@ -38,18 +38,12 @@ internal class SmsErrors(context: Context) {
 
     fun processResultCode(resultCode: Int) {
         if (resultCode != Activity.RESULT_OK) {
+            if (resultCode in FatalSmsErrors) fatalSmsError = resultCode
             lastSmsError = resultCode
-            if (resultCode in FatalSmsErrors) {
-                fatalSmsError = resultCode
-            }
         }
     }
 
-    val hadSmsError: Boolean get() = lastSmsError != SMS_ERROR_NONE
-
-    val hadFatalSmsError: Boolean get() = fatalSmsError != SMS_ERROR_NONE
-
-    fun createFatalMessage(): String = "SMS Error $fatalSmsError"
+    fun createFatalMessage(): String = "SMS Error: $fatalSmsError"
 }
 
 private const val PREF_FATAL_SMS_ERROR = "fatal_sms_error"

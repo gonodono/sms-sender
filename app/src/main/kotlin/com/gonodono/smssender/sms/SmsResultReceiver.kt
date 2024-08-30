@@ -7,8 +7,10 @@ import android.telephony.SmsMessage
 import com.gonodono.smssender.repository.SmsSenderRepository
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import kotlin.coroutines.cancellation.CancellationException
 
 @AndroidEntryPoint
 class SmsResultReceiver : BroadcastReceiver() {
@@ -22,8 +24,7 @@ class SmsResultReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         val messageId = intent.data?.fragment?.toIntOrNull() ?: return
 
-        val pendingResult = goAsync()
-        scope.launch {
+        doAsync(scope) { pendingResult ->
             when (intent.action) {
                 ACTION_SMS_SENT -> {
                     repository.handleSendResult(
@@ -32,24 +33,32 @@ class SmsResultReceiver : BroadcastReceiver() {
                         intent.getBooleanExtra(EXTRA_IS_LAST_PART, false)
                     )
                 }
-
                 ACTION_SMS_DELIVERED -> {
-                    val message = getResultMessageFromIntent(intent)
-                    if (message != null) {
-                        repository.handleDeliveryResult(
-                            messageId,
-                            message.status
-                        )
+                    val message = SmsMessage.createFromPdu(
+                        intent.getByteArrayExtra("pdu"),
+                        intent.getStringExtra("format")
+                    )
+                    message?.let { msg ->
+                        repository.handleDeliveryResult(messageId, msg.status)
                     }
                 }
             }
-            pendingResult.finish()
         }
     }
 }
 
-private fun getResultMessageFromIntent(intent: Intent): SmsMessage? =
-    SmsMessage.createFromPdu(
-        intent.getByteArrayExtra("pdu"),
-        intent.getStringExtra("format")
-    )
+internal fun BroadcastReceiver.doAsync(
+    scope: CoroutineScope = CoroutineScope(SupervisorJob()),
+    block: suspend (BroadcastReceiver.PendingResult) -> Unit
+) {
+    val pendingResult = goAsync()
+    scope.launch {
+        try {
+            block(pendingResult)
+        } catch (e: CancellationException) {
+            throw e
+        } finally {
+            pendingResult.finish()
+        }
+    }
+}

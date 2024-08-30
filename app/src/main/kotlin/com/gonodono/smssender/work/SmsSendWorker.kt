@@ -26,7 +26,7 @@ class SmsSendWorker @AssistedInject constructor(
         if (repository.doSend(id)) Result.success() else Result.failure()
 
     override suspend fun getForegroundInfo(): ForegroundInfo =
-        ForegroundInfo(420, createNotification(applicationContext))
+        ForegroundInfo(137, createNotification(applicationContext))
 }
 
 private const val SENDER_CHANNEL_ID = "sms_send_worker"

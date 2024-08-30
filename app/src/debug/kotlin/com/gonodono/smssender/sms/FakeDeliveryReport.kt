@@ -9,7 +9,6 @@ import com.gonodono.smssender.EMULATOR_PORT
 import com.gonodono.smssender.data.SmsSenderDatabase
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
 import java.io.ByteArrayOutputStream
 import java.time.Instant
 import java.time.ZoneId
@@ -27,8 +26,7 @@ class FakeDeliveryReporter : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         if (Telephony.Sms.Intents.SMS_RECEIVED_ACTION != intent.action) return
 
-        val pendingResult = goAsync()
-        scope.launch {
+        doAsync(scope) {
             // Assumes everything will decode correctly in testing
             val parts = Telephony.Sms.Intents.getMessagesFromIntent(intent)
             val body = parts.joinToString("") { it.displayMessageBody }
@@ -43,7 +41,6 @@ class FakeDeliveryReporter : BroadcastReceiver() {
                     Telephony.Sms.STATUS_COMPLETE  // or _FAILED or _PENDING
                 )
             }
-            pendingResult.finish()
         }
     }
 }

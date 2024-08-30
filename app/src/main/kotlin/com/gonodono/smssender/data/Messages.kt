@@ -3,6 +3,7 @@ package com.gonodono.smssender.data
 import androidx.room.ColumnInfo
 import androidx.room.Dao
 import androidx.room.Entity
+import androidx.room.Ignore
 import androidx.room.Insert
 import androidx.room.PrimaryKey
 import androidx.room.Query
@@ -25,6 +26,10 @@ class Message(
 
     enum class DeliveryStatus { Complete, Pending, Failed }
 
+    @Ignore
+    val isFailed: Boolean = sendStatus == SendStatus.Failed ||
+            deliveryStatus == DeliveryStatus.Failed
+
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
@@ -36,7 +41,8 @@ class Message(
 
 @Dao
 interface BaseMessageDao {
-    @get:Query("SELECT * FROM messages ORDER BY id DESC")
+
+    @get:Query("SELECT * FROM messages")
     val allMessages: Flow<List<Message>>
 
     @get:Query(
