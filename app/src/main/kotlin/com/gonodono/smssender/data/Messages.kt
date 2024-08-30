@@ -27,6 +27,9 @@ class Message(
     enum class DeliveryStatus { Complete, Pending, Failed }
 
     @Ignore
+    val isQueued: Boolean = sendStatus == SendStatus.Queued
+
+    @Ignore
     val isFailed: Boolean = sendStatus == SendStatus.Failed ||
             deliveryStatus == DeliveryStatus.Failed
 

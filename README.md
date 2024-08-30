@@ -9,7 +9,7 @@ results mechanism given in
 The design is a modern update to the classic pattern that uses a `Service` to
 send messages queued through a `ContentProvider` or local `SQLiteDatabase`.
 
-The Room database comprises two entities – `Message` and `SendTask` – and their
+The Room database comprises two entities, `Message` and `SendTask`, and their
 corresponding DAOs. Each DAO has functions for the CRUD operations that you
 would expect, and `MessageDao` also provides a `Flow` on a query for the most
 recent queued `Message`, which greatly simplifies the send routine.
@@ -18,10 +18,9 @@ That routine is executed in a `Worker` which is started immediately for our
 demonstration, but which could easily be scheduled for whenever, with whatever
 constraints are needed.
 
-The actual work for the send is handled in `SmsSendRepository`, and we use Hilt
-to maintain a singleton of that which we also inject into the
-statically-registered Receiver for the results, allowing us to keep the overall
-logic in one place.
+The actual work for the send is handled in `SmsSendRepository`. We use Hilt to
+maintain a singleton which we also inject into the statically-registered
+Receiver for the results, allowing us to keep the overall logic in one place.
 
 The UI is done in minimal Compose, and is basically just text logs with a couple
 of buttons.

@@ -22,6 +22,7 @@ internal class MainViewModel @Inject constructor(
     ) { messages, task ->
         UiState.Active(
             messages.map { it.toMessageInfo() },
+            messages.count { it.isQueued },
             messages.count { it.isFailed },
             task?.state == SendTask.State.Running,
             task?.error
@@ -37,8 +38,16 @@ internal class MainViewModel @Inject constructor(
         }
     }
 
+    fun sendQueuedMessages() {
+        repository.startImmediateSend()
+    }
+
     fun resetFailedAndRetry() {
         viewModelScope.launch { repository.resetFailedAndRetry() }
+    }
+
+    fun tryCancelCurrentSend() {
+        repository.tryCancelCurrentSend()
     }
 }
 
@@ -48,6 +57,7 @@ internal sealed interface UiState {
 
     data class Active(
         val messages: List<MessageInfo>,
+        val queuedCount: Int,
         val failedCount: Int,
         val isSending: Boolean,
         val lastError: String?

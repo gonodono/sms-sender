@@ -16,7 +16,7 @@ class SendTask(
     var state: State = State.Running,
     var error: String? = null
 ) {
-    enum class State { Running, Succeeded, Failed }
+    enum class State { Running, Succeeded, Failed, Cancelled }
 }
 
 @Dao
@@ -30,4 +30,10 @@ interface SendTaskDao {
 
     @Update
     suspend fun update(task: SendTask)
+
+    @Query("SELECT state FROM send_tasks WHERE id=:id")
+    suspend fun getTaskState(id: UUID): SendTask.State?
+
+    @Query("UPDATE send_tasks SET state='Cancelled' WHERE id=:id")
+    suspend fun setTaskCancelled(id: UUID): Int
 }

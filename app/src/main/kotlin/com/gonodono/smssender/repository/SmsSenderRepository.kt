@@ -43,12 +43,7 @@ class SmsSenderRepository(
         startImmediateSend()
     }
 
-    suspend fun resetFailedAndRetry() {
-        messageDao.resetFailedToQueued()
-        startImmediateSend()
-    }
-
-    private fun startImmediateSend() {
+    fun startImmediateSend() {
         val request = OneTimeWorkRequestBuilder<SmsSendWorker>()
             .setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
             .build()
@@ -56,10 +51,21 @@ class SmsSenderRepository(
             .enqueueUniqueWork("SmsSend", ExistingWorkPolicy.KEEP, request)
     }
 
+    suspend fun resetFailedAndRetry() {
+        messageDao.resetFailedToQueued()
+        startImmediateSend()
+    }
+
+    fun tryCancelCurrentSend() {
+        currentTask?.state = SendTask.State.Cancelled
+    }
+
+    private var currentTask: SendTask? = null
+
     private val smsErrors = SmsErrors(context)
 
     suspend fun doSend(id: UUID): Boolean {
-        val task = SendTask(id)
+        val task = SendTask(id).also { currentTask = it }
         sendTaskDao.insert(task)
         smsErrors.resetForNextTask()
 
@@ -67,38 +73,44 @@ class SmsSenderRepository(
             scope.launch {
                 messageDao.nextQueuedMessage
                     .distinctUntilChanged()
-                    .takeWhile { message ->
-                        when {
-                            smsErrors.hadFatalSmsError -> {
-                                task.state = SendTask.State.Failed
-                                task.error = smsErrors.createFatalMessage()
-                                false
-                            }
-                            message == null -> {
-                                task.state = SendTask.State.Succeeded
-                                false
-                            }
-                            else -> {
-                                smsErrors.resetForNextMessage()
-                                val result = sendMessage(context, message)
-                                when (result) {
-                                    SendResult.Success -> true
-                                    is SendResult.Error -> {
-                                        task.state = SendTask.State.Failed
-                                        task.error = result.toString()
-                                        false
-                                    }
-                                }
-                            }
-                        }
-                    }
+                    .takeWhile { msg -> checkStateAndSend(task, msg) }
                     .onCompletion { continuation.resume(Unit) }
                     .collect()
             }
         }
 
+        currentTask = null
         sendTaskDao.update(task)
         return task.state == SendTask.State.Succeeded
+    }
+
+    private fun checkStateAndSend(
+        task: SendTask,
+        message: Message?
+    ): Boolean = when {
+        task.state == SendTask.State.Cancelled -> {
+            false
+        }
+        smsErrors.hadFatalSmsError -> {
+            task.state = SendTask.State.Failed
+            task.error = smsErrors.createFatalMessage()
+            false
+        }
+        message == null -> {
+            task.state = SendTask.State.Succeeded
+            false
+        }
+        else -> {
+            smsErrors.resetForNextMessage()
+            when (val result = sendMessage(context, message)) {
+                SendResult.Success -> true
+                is SendResult.Error -> {
+                    task.state = SendTask.State.Failed
+                    task.error = result.toString()
+                    false
+                }
+            }
+        }
     }
 
     suspend fun handleSendResult(
