@@ -9,30 +9,37 @@ results mechanism given in
 The design is a modern update to the classic pattern that uses a `Service` to
 send messages queued through a `ContentProvider` or local `SQLiteDatabase`.
 
-The Room database comprises two entities, `Message` and `SendTask`, and their
-corresponding DAOs. Each DAO has functions for the CRUD operations that you
-would expect, and `MessageDao` also provides a `Flow` on a query for the most
-recent queued `Message`, which greatly simplifies the send routine.
+The database here is managed through Room, and its schema comprises two
+entities, `Message` and `SendTask`, with their corresponding DAOs. Each DAO has
+functions for the CRUD operations that you would expect, and `MessageDao` also
+provides a `Flow` on a query for the oldest queued `Message`, greatly
+simplifying the send routine.
 
 That routine is executed in a `Worker` which is started immediately for our
 demonstration, but which could easily be scheduled for whenever, with whatever
 constraints are needed.
 
 The actual work for the send is handled in `SmsSendRepository`. We use Hilt to
-maintain a singleton which we also inject into the statically-registered
-Receiver for the results, allowing us to keep the overall logic in one place.
+maintain a singleton that we also inject into the statically-registered results
+Receiver, allowing us to keep the overall logic in one place.
 
-The UI is done in minimal Compose, and is basically just text logs with a couple
-of buttons.
+The UI is done in minimal Compose, and is basically just text logs with a few
+buttons.
+
+<p align="center">
+<img src="images/screenshots.png"
+alt="Screenshots of a send task running, and a failed send."
+width="20%" />
+</p>
 
 ### Fake delivery reports
 
-The last thing to note is the fake delivery report mechanism. This only works
-when the test device is sending to itself. It's nothing more than a regular
-`BroadcastReceiver` registered for `SMS_RECEIVED` that checks each incoming
-message against those sent, and upon a match, sends the same kind of broadcast
-you would get in a real run, complete with valid result PDU attached as an
-extra.
+The last thing to note is the fake delivery report mechanism. It's located in
+the debug build, and it only works when the test device is sending to itself.
+It's nothing more than a regular `BroadcastReceiver` registered for
+`SMS_RECEIVED` that checks each incoming message against those sent, and upon a
+match, sends the same kind of broadcast you would get in a real run, complete
+with valid result PDU attached as an extra.
 
 This was mainly meant to make testing on the emulators more convenient, but
 it'll also work on a real device sending to itself, should the carrier not
@@ -40,6 +47,8 @@ provide delivery reports. As is, the app assumes that it'll be running on a
 single default emulator; i.e., it sends messages to hard-coded port number 5554.
 
 ---
+
+<br />
 
 MIT License
 

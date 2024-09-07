@@ -10,15 +10,17 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.Divider
 import androidx.compose.material.LocalTextStyle
+import androidx.compose.material.OutlinedButton
 import androidx.compose.material.Text
-import androidx.compose.material.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
@@ -126,23 +128,24 @@ private fun InfoText(uiState: UiState.Active) {
 private fun ButtonPanel(uiState: UiState.Active, viewModel: MainViewModel) {
     when {
         uiState.isSending -> {
-            TextButton(viewModel::tryCancelCurrentSend) {
+            OutlinedButton(viewModel::tryCancelCurrentSend) {
                 Text("Cancel current send")
             }
         }
         else -> {
             if (uiState.queuedCount > 0) {
-                TextButton(viewModel::sendQueuedMessages) {
+                OutlinedButton(viewModel::sendQueuedMessages) {
                     Text("Send ${uiState.queuedCount} queued messages")
                 }
             } else {
-                TextButton(viewModel::queueDemoMessagesAndSend) {
+                OutlinedButton(viewModel::queueDemoMessagesAndSend) {
                     Text("Queue messages & send")
                 }
             }
             if (uiState.failedCount > 0) {
-                TextButton(viewModel::resetFailedAndRetry) {
-                    Text("Reset ${uiState.failedCount} failed & retry")
+                Spacer(Modifier.size(10.dp))
+                OutlinedButton(viewModel::resetFailedAndRetry) {
+                    Text("Reset ${uiState.failedCount} failed & retry all")
                 }
             }
         }

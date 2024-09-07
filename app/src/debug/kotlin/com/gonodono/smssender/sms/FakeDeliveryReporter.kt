@@ -33,14 +33,14 @@ class FakeDeliveryReporter : BroadcastReceiver() {
 
             val message = database.messageDao
                 .checkForFakeDeliveryReport(EMULATOR_PORT, body)
-            if (message != null) {
-                sendFakeDeliveryReport(
-                    context,
-                    message.id,
-                    message.address,
-                    Telephony.Sms.STATUS_COMPLETE  // or _FAILED or _PENDING
-                )
-            }
+                ?: return@doAsync
+
+            sendFakeDeliveryReport(
+                context,
+                message.id,
+                message.address,
+                Telephony.Sms.STATUS_COMPLETE  // or _FAILED or _PENDING
+            )
         }
     }
 }
@@ -91,17 +91,17 @@ private fun createTimestamp(date: Long): ByteArray {
 
     val timestamp = ByteArray(7)
     val year = localDateTime.year.let { it - if (it > 2000) 2000 else 1900 }
-    timestamp[0] = flipDigits(year)
-    timestamp[1] = flipDigits(localDateTime.monthValue)
-    timestamp[2] = flipDigits(localDateTime.dayOfMonth)
-    timestamp[3] = flipDigits(localDateTime.hour)
-    timestamp[4] = flipDigits(localDateTime.minute)
-    timestamp[5] = flipDigits(localDateTime.second)
-    timestamp[6] = flipDigits(timezoneOffset)
+    timestamp[0] = year.toBigEndianByte()
+    timestamp[1] = localDateTime.monthValue.toBigEndianByte()
+    timestamp[2] = localDateTime.dayOfMonth.toBigEndianByte()
+    timestamp[3] = localDateTime.hour.toBigEndianByte()
+    timestamp[4] = localDateTime.minute.toBigEndianByte()
+    timestamp[5] = localDateTime.second.toBigEndianByte()
+    timestamp[6] = timezoneOffset.toBigEndianByte()
     // ** INDEX CORRECTED FROM 0 IN SOURCE **
     if (negativeOffset) timestamp[6] = (timestamp[6].toInt() or 0x08).toByte()
     return timestamp
 }
 
-private fun flipDigits(num: Int) =
-    (num % 10 and 0x0F shl 4 or (num / 10 and 0x0F)).toByte()
+private fun Int.toBigEndianByte(): Byte =
+    (this % 10 and 0x0F shl 4 or (this / 10 and 0x0F)).toByte()

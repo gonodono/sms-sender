@@ -15,10 +15,12 @@ import com.gonodono.smssender.sms.SendResult
 import com.gonodono.smssender.sms.sendMessage
 import com.gonodono.smssender.work.SmsSendWorker
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.onCompletion
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.takeWhile
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
@@ -73,6 +75,7 @@ class SmsSenderRepository(
             scope.launch {
                 messageDao.nextQueuedMessage
                     .distinctUntilChanged()
+                    .onEach { delay(1000L) } // <- Artificial delay. Demo only.
                     .takeWhile { msg -> checkStateAndSend(task, msg) }
                     .onCompletion { continuation.resume(Unit) }
                     .collect()
@@ -89,6 +92,7 @@ class SmsSenderRepository(
         message: Message?
     ): Boolean = when {
         task.state == SendTask.State.Cancelled -> {
+            // State is already set, so just stop.
             false
         }
         smsErrors.hadFatalSmsError -> {
@@ -100,15 +104,20 @@ class SmsSenderRepository(
             task.state = SendTask.State.Succeeded
             false
         }
-        else -> {
-            smsErrors.resetForNextMessage()
-            when (val result = sendMessage(context, message)) {
-                SendResult.Success -> true
-                is SendResult.Error -> {
-                    task.state = SendTask.State.Failed
-                    task.error = result.toString()
-                    false
-                }
+        else -> sendMessage(task, message)
+    }
+
+    private fun sendMessage(
+        task: SendTask,
+        message: Message
+    ): Boolean {
+        smsErrors.resetForNextMessage()
+        return when (val result = sendMessage(context, message)) {
+            SendResult.Success -> true
+            is SendResult.Error -> {
+                task.state = SendTask.State.Failed
+                task.error = result.toString()
+                false
             }
         }
     }
