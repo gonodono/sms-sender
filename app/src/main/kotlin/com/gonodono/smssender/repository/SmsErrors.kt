@@ -1,64 +1,18 @@
 package com.gonodono.smssender.repository
 
 import android.annotation.SuppressLint
-import android.app.Activity
-import android.content.Context
-import android.content.SharedPreferences
 import android.telephony.SmsManager
+import java.lang.reflect.Field
 
-internal class SmsErrors(context: Context) {
+// Value of SmsManager.RESULT_ERROR_NONE, not available until API level 30.
+internal const val RESULT_ERROR_NONE = 0
 
-    // These errors are persisted on the off chance that the app is killed in
-    // the time between a send and the receipt of its results. Tying them to the
-    // task instance would've made retrieval unwieldy for that case, and we
-    // don't need the specific errors in messages, so this seemed appropriate.
-
-    private val errors: SharedPreferences =
-        context.getSharedPreferences("sms_errors", Context.MODE_PRIVATE)
-
-    private var fatalSmsError: Int
-        get() = errors.getInt(PREF_FATAL_SMS_ERROR, SMS_ERROR_NONE)
-        set(value) = errors.edit().putInt(PREF_FATAL_SMS_ERROR, value).apply()
-
-    private var lastSmsError: Int
-        get() = errors.getInt(PREF_LAST_SMS_ERROR, SMS_ERROR_NONE)
-        set(value) = errors.edit().putInt(PREF_LAST_SMS_ERROR, value).apply()
-
-    val hadFatalSmsError: Boolean get() = fatalSmsError != SMS_ERROR_NONE
-
-    val hadSmsError: Boolean get() = lastSmsError != SMS_ERROR_NONE
-
-    fun resetForNextTask() {
-        fatalSmsError = SMS_ERROR_NONE
-    }
-
-    fun resetForNextMessage() {
-        lastSmsError = SMS_ERROR_NONE
-    }
-
-    fun processResultCode(resultCode: Int) {
-        if (resultCode != Activity.RESULT_OK) {
-            if (resultCode in FatalSmsErrors) fatalSmsError = resultCode
-            lastSmsError = resultCode
-        }
-    }
-
-    fun createFatalMessage(): String = "SMS Error: $fatalSmsError"
-}
-
-private const val PREF_FATAL_SMS_ERROR = "fatal_sms_error"
-
-private const val PREF_LAST_SMS_ERROR = "last_sms_error"
-
-private const val SMS_ERROR_NONE = 0
-
-// No issue if newer error ints checked on older versions
-@SuppressLint("InlinedApi")
-private val FatalSmsErrors = intArrayOf(
-    // You may wish to adjust this selection, depending on your specific
-    // setup (or just to double-check that I got all that I should've).
-    // The full list is available in the docs for SmsManager.
-    // https://developer.android.com/reference/android/telephony/SmsManager#sendMultipartTextMessage(java.lang.String,%20java.lang.String,%20java.util.ArrayList%3Cjava.lang.String%3E,%20java.util.ArrayList%3Candroid.app.PendingIntent%3E,%20java.util.ArrayList%3Candroid.app.PendingIntent%3E)
+// You may wish to inspect this selection to adjust it for your specific setup
+// (or just to double-check that I got all that I should've). The full list is
+// available in the docs for SmsManager.
+// https://developer.android.com/reference/android/telephony/SmsManager#sendMultipartTextMessage(java.lang.String,%20java.lang.String,%20java.util.ArrayList%3Cjava.lang.String%3E,%20java.util.ArrayList%3Candroid.app.PendingIntent%3E,%20java.util.ArrayList%3Candroid.app.PendingIntent%3E)
+@SuppressLint("InlinedApi")  // <- No issue if new ints checked on old versions.
+internal val FatalSmsErrors = intArrayOf(
     SmsManager.RESULT_ERROR_GENERIC_FAILURE,
     SmsManager.RESULT_ERROR_LIMIT_EXCEEDED,
     SmsManager.RESULT_ERROR_NO_SERVICE,
@@ -89,3 +43,24 @@ private val FatalSmsErrors = intArrayOf(
     SmsManager.RESULT_RIL_SIM_ABSENT,
     SmsManager.RESULT_RIL_SYSTEM_ERR
 )
+
+// This is 'cause I'm lazy and it's just a demo. If you use this function in a
+// real app, you'll probably want to create a list of actual string literals.
+internal fun errorCodeToString(value: Int): String {
+    // This field doesn't exist on API levels < 30.
+    if (value == 0) return "RESULT_ERROR_NONE"
+
+    val name = try {
+        val fields: List<Field> =
+            resultFields ?: SmsManager::class.java
+                .declaredFields
+                .filter { it.name.startsWith("RESULT_") }
+                .also { resultFields = it }
+        fields.firstOrNull { it.get(null) as? Int == value }?.name
+    } catch (_: Exception) {
+        null
+    }
+    return name ?: "Unknown error: $value"
+}
+
+private var resultFields: List<Field>? = null

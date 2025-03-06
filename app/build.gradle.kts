@@ -16,22 +16,22 @@ android {
         targetSdk = 35
         versionCode = 1
         versionName = "1.0"
-
-        vectorDrawables {
-            useSupportLibrary = true
-        }
     }
     buildFeatures {
         buildConfig = true
         compose = true
     }
     buildTypes {
+        debug {
+            buildConfigField("int", "FAKE_DELIVERY_REPORTS_MAX_SDK", "30")
+            manifestPlaceholders["fakeDeliveryReportsMaxSdk"] = 30
+        }
         release {
-            isMinifyEnabled = false
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
-            )
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"))
+
+            // Lets us test with ProGuard, etc. w/o having to mess with a key.
             signingConfig = signingConfigs.getByName("debug")
         }
     }
@@ -41,7 +41,7 @@ android {
         isCoreLibraryDesugaringEnabled = true
     }
     kotlinOptions {
-        jvmTarget = "17"
+        jvmTarget = JavaVersion.VERSION_17.toString()
     }
     packaging {
         resources {
@@ -69,7 +69,7 @@ dependencies {
     ksp(libs.hilt.androidx.compiler)
 
     implementation(libs.activity.compose)
-    implementation(libs.compose.material)
+    implementation(libs.compose.material3)
 
     implementation(platform(libs.compose.bom))
     implementation(libs.compose.ui)

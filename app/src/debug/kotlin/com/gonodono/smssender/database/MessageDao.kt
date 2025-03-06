@@ -1,4 +1,4 @@
-package com.gonodono.smssender.data
+package com.gonodono.smssender.database
 
 import androidx.room.Dao
 import androidx.room.Query
@@ -7,8 +7,11 @@ import androidx.room.Query
 interface MessageDao : BaseMessageDao {
 
     @Query(
-        "SELECT * FROM messages WHERE address=:address AND " +
-                "body=:body AND delivery_status IS NULL LIMIT 1"
+        """
+        SELECT * FROM messages
+        WHERE address=:address AND body=:body AND delivery_status IS NULL
+        LIMIT 1
+        """
     )
     suspend fun checkForFakeDeliveryReport(
         address: String,

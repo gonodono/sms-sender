@@ -1,65 +1,87 @@
 package com.gonodono.smssender
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.gonodono.smssender.data.Message
-import com.gonodono.smssender.data.SendTask
+import com.gonodono.smssender.database.DeliveryStatus
+import com.gonodono.smssender.database.Message
+import com.gonodono.smssender.database.SendStatus
+import com.gonodono.smssender.internal.ExampleData
+import com.gonodono.smssender.internal.hasSmsPermissions
 import com.gonodono.smssender.repository.SmsSenderRepository
+import com.gonodono.smssender.work.SmsSendWorker
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 internal class MainViewModel @Inject constructor(
+    @ApplicationContext private val context: Context,
     private val repository: SmsSenderRepository
 ) : ViewModel() {
 
-    val uiState: Flow<UiState> = combine(
-        repository.allMessages,
-        repository.latestSendTask
-    ) { messages, task ->
-        UiState.Active(
-            messages.map { it.toMessageInfo() },
-            messages.count { it.isQueued },
-            messages.count { it.isFailed },
-            task?.state == SendTask.State.Running,
-            task?.error
-        )
-    }
+    private val hasPermissions = MutableStateFlow(context.hasSmsPermissions())
 
-    fun queueDemoMessagesAndSend() {
-        viewModelScope.launch {
-            val messages = (ShortTexts + LongTexts).map { text ->
-                Message(EMULATOR_PORT, text, Message.SendStatus.Queued)
-            }
-            repository.insertMessagesAndSend(messages)
+    val uiState: Flow<UiState> = combine(
+        hasPermissions,
+        repository.allMessages,
+        SmsSendWorker.workInfos(context)
+    ) { hasPermissions, messages, workInfos ->
+        if (hasPermissions) {
+            UiState.Active(
+                messages.map { it.toMessageInfo() },
+                messages.count { it.isQueued },
+                messages.count { it.isFailed },
+                SmsSendWorker.isSending(workInfos),
+                SmsSendWorker.isCancelled(workInfos),
+                SmsSendWorker.lastError(workInfos)
+            )
+        } else {
+            UiState.NoPermissions
         }
     }
 
-    fun sendQueuedMessages() {
-        repository.startImmediateSend()
+    fun setPermissionsGranted() {
+        hasPermissions.value = true
     }
 
-    fun resetFailedAndRetry() {
-        viewModelScope.launch { repository.resetFailedAndRetry() }
+    fun queueMessages() {
+        viewModelScope.launch {
+            val messages = ExampleData.AllTexts.map { text ->
+                // Ensures unique texts. This is really only so that the fake
+                // delivery report lookups work correctly with prior failures.
+                val body = "$text - ${System.currentTimeMillis()}"
+                Message(ExampleData.ADDRESS, body, SendStatus.Queued)
+            }
+            repository.insertMessages(messages)
+        }
     }
 
-    fun tryCancelCurrentSend() {
-        repository.tryCancelCurrentSend()
+    fun startSend() = repository.startSend()
+
+    fun cancelSend() = repository.cancelSend()
+
+    fun resetFailed() {
+        viewModelScope.launch { repository.resetFailed() }
     }
 }
 
 internal sealed interface UiState {
 
-    data object Loading : UiState
+    data object Initial : UiState
+
+    data object NoPermissions : UiState
 
     data class Active(
         val messages: List<MessageInfo>,
         val queuedCount: Int,
         val failedCount: Int,
         val isSending: Boolean,
+        val isCancelled: Boolean,
         val lastError: String?
     ) : UiState
 }
@@ -79,21 +101,9 @@ private fun Message.toMessageInfo() =
         deliveryStatus.toString()
     )
 
-private val ShortTexts: List<String> = listOf("Hi!", "Hello!", "Howdy!")
+private val Message.isQueued: Boolean
+    get() = sendStatus == SendStatus.Queued
 
-private val LongTexts: List<String> = listOf(
-    "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod" +
-            " tempor incididunt ut labore et dolore magna aliqua. Ut enim ad" +
-            " minim veniam, quis nostrud exercitation ullamco laboris nisi ut" +
-            " aliquip ex ea commodo consequat.",
-    "Duis aute irure dolor in reprehenderit in voluptate velit esse cillum" +
-            " dolore eu fugiat nulla pariatur. Excepteur sint occaecat" +
-            " cupidatat non proident, sunt in culpa qui officia deserunt" +
-            " mollit anim id est laborum.",
-    "Sed ut perspiciatis unde omnis iste natus error sit voluptatem " +
-            "accusantium doloremque laudantium, totam rem aperiam, eaque ipsa" +
-            " quae ab illo inventore veritatis et quasi architecto beatae" +
-            " vitae dicta sunt explicabo."
-)
-
-internal const val EMULATOR_PORT = "5554"
+private val Message.isFailed: Boolean
+    get() = sendStatus == SendStatus.Failed ||
+            deliveryStatus == DeliveryStatus.Failed

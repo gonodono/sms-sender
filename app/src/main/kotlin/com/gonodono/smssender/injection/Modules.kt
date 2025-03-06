@@ -2,15 +2,15 @@ package com.gonodono.smssender.injection
 
 import android.content.Context
 import androidx.room.Room
-import com.gonodono.smssender.data.SmsSenderDatabase
+import com.gonodono.smssender.database.SmsSenderDatabase
 import com.gonodono.smssender.repository.SmsSenderRepository
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import javax.inject.Singleton
 
 @Module
@@ -21,9 +21,9 @@ object RepositoryModule {
     @Singleton
     fun provideRepository(
         @ApplicationContext context: Context,
-        scope: CoroutineScope,
-        database: SmsSenderDatabase
-    ) = SmsSenderRepository(context, scope, database)
+        database: SmsSenderDatabase,
+        dispatcher: CoroutineDispatcher
+    ): SmsSenderRepository = SmsSenderRepository(context, database, dispatcher)
 }
 
 @Module
@@ -32,7 +32,7 @@ object DatabaseModule {
 
     @Provides
     @Singleton
-    fun provideDatabase(@ApplicationContext context: Context) =
+    fun provideDatabase(@ApplicationContext context: Context): SmsSenderDatabase =
         Room.databaseBuilder(
             context,
             SmsSenderDatabase::class.java,
@@ -46,5 +46,5 @@ object CoroutineModule {
 
     @Provides
     @Singleton
-    fun provideCoroutineScope() = CoroutineScope(SupervisorJob())
+    fun provideCoroutineDispatcher(): CoroutineDispatcher = Dispatchers.Default
 }

@@ -1,26 +1,24 @@
 [versions]
-agp = "8.6.0"
+agp = "8.9.0"
 appCompat = "1.7.0"
-activityKtx = "1.9.2"
-composeBom = "2024.09.00"
-coreKtx = "1.13.1"
-desugar = "2.1.2"
-hiltAndroid = "2.51"
+activityKtx = "1.10.1"
+composeBom = "2025.02.00"
+coreKtx = "1.15.0"
+desugar = "2.1.5"
+hiltAndroid = "2.55"
 hiltAndroidX = "1.2.0"
-hiltAndroidxWork = "1.2.0"
-hilt = "2.51.1"
-kotlin = "2.0.20"
-ksp = "2.0.20-1.0.25"
-lifecycle = "2.8.5"
+hilt = "2.55"
+kotlin = "2.1.10"
+ksp = "2.1.10-1.0.31"
+lifecycle = "2.8.7"
 room = "2.6.1"
-workRuntimeKtx = "2.9.1"
+workRuntimeKtx = "2.10.0"
 
 [libraries]
 core-ktx = { module = "androidx.core:core-ktx", version.ref = "coreKtx" }
 appcompat = { module = "androidx.appcompat:appcompat", version.ref = "appCompat" }
 activity-compose = { module = "androidx.activity:activity-compose", version.ref = "activityKtx" }
 activity-ktx = { module = "androidx.activity:activity-ktx", version.ref = "activityKtx" }
-desugar-jdk-libs = { module = "com.android.tools:desugar_jdk_libs", version.ref = "desugar" }
 lifecycle-viewmodel-compose = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "lifecycle" }
 
 compose-bom = { module = "androidx.compose:compose-bom", version.ref = "composeBom" }
@@ -28,18 +26,20 @@ compose-ui = { group = "androidx.compose.ui", name = "ui" }
 compose-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest" }
 compose-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling" }
 compose-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview" }
-compose-material = { group = "androidx.compose.material", name = "material" }
+compose-material3 = { group = "androidx.compose.material3", name = "material3" }
 
 hilt-android = { module = "com.google.dagger:hilt-android", version.ref = "hiltAndroid" }
 hilt-android-compiler = { module = "com.google.dagger:hilt-android-compiler", version.ref = "hiltAndroid" }
-hilt-androidx-work = { module = "androidx.hilt:hilt-work", version.ref = "hiltAndroidxWork" }
 hilt-androidx-compiler = { module = "androidx.hilt:hilt-compiler", version.ref = "hiltAndroidX" }
+hilt-androidx-work = { module = "androidx.hilt:hilt-work", version.ref = "hiltAndroidX" }
 
 room-compiler = { module = "androidx.room:room-compiler", version.ref = "room" }
 room-ktx = { module = "androidx.room:room-ktx", version.ref = "room" }
 room-runtime = { module = "androidx.room:room-runtime", version.ref = "room" }
 
 work-runtime-ktx = { module = "androidx.work:work-runtime-ktx", version.ref = "workRuntimeKtx" }
+
+desugar-jdk-libs = { module = "com.android.tools:desugar_jdk_libs", version.ref = "desugar" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

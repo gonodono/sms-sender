@@ -1,19 +1,21 @@
 package com.gonodono.smssender.work
 
-import android.app.Notification
-import android.app.NotificationChannel
-import android.app.NotificationManager
 import android.content.Context
-import android.os.Build
-import androidx.core.app.NotificationCompat
 import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
+import androidx.work.ExistingWorkPolicy
 import androidx.work.ForegroundInfo
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.OutOfQuotaPolicy
+import androidx.work.WorkInfo
+import androidx.work.WorkManager
 import androidx.work.WorkerParameters
-import com.gonodono.smssender.R
+import androidx.work.workDataOf
+import com.gonodono.smssender.repository.SendResult
 import com.gonodono.smssender.repository.SmsSenderRepository
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
+import kotlinx.coroutines.flow.Flow
 
 @HiltWorker
 class SmsSendWorker @AssistedInject constructor(
@@ -22,33 +24,51 @@ class SmsSendWorker @AssistedInject constructor(
     private val repository: SmsSenderRepository
 ) : CoroutineWorker(context, workerParams) {
 
+    // The demo always returns Success to avoid auto-rescheduling.
     override suspend fun doWork(): Result =
-        if (repository.doSend(id)) Result.success() else Result.failure()
+        when (val sendResult = repository.doSend()) {
+            SendResult.Completed -> {
+                Result.success()
+            }
+            SendResult.Cancelled -> {
+                Result.success(workDataOf(CANCELLED_KEY to true))
+            }
+            is SendResult.Error -> {
+                Result.success(workDataOf(ERROR_KEY to sendResult.toString()))
+            }
+        }
 
     override suspend fun getForegroundInfo(): ForegroundInfo =
-        ForegroundInfo(137, createNotification(applicationContext))
-}
+        ForegroundInfo(0, createNotification(applicationContext))
 
-private const val SENDER_CHANNEL_ID = "sms_send_worker"
+    companion object {
 
-private const val SENDER_CHANNEL_NAME = "SMS Send Worker"
+        private const val CANCELLED_KEY = "cancelled"
 
-private fun createNotification(context: Context): Notification {
-    val manager = context.getSystemService(NotificationManager::class.java)
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O &&
-        manager.getNotificationChannel(SENDER_CHANNEL_ID) == null
-    ) {
-        manager.createNotificationChannel(
-            NotificationChannel(
-                SENDER_CHANNEL_ID,
-                SENDER_CHANNEL_NAME,
-                NotificationManager.IMPORTANCE_DEFAULT
-            )
-        )
+        private const val ERROR_KEY = "error"
+
+        private const val WORK_NAME = "sendSms"
+
+        fun enqueue(context: Context) {
+            val request = OneTimeWorkRequestBuilder<SmsSendWorker>()
+                .setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
+                .build()
+            WorkManager.getInstance(context)
+                .enqueueUniqueWork(WORK_NAME, ExistingWorkPolicy.KEEP, request)
+        }
+
+        fun workInfos(context: Context): Flow<List<WorkInfo>> =
+            WorkManager.getInstance(context)
+                .getWorkInfosForUniqueWorkFlow(WORK_NAME)
+
+        fun isSending(workInfos: List<WorkInfo>): Boolean =
+            workInfos.firstOrNull()?.state?.isFinished == false
+
+        fun isCancelled(workInfos: List<WorkInfo>): Boolean =
+            workInfos.firstOrNull()?.outputData
+                ?.getBoolean(CANCELLED_KEY, false) == true
+
+        fun lastError(workInfos: List<WorkInfo>): String? =
+            workInfos.firstOrNull()?.outputData?.getString(ERROR_KEY)
     }
-    return NotificationCompat.Builder(context, SENDER_CHANNEL_ID)
-        .setContentTitle(SENDER_CHANNEL_NAME)
-        .setContentText("Sending…")
-        .setSmallIcon(R.drawable.ic_launcher_foreground)
-        .build()
 }

@@ -7,7 +7,8 @@ import android.net.Uri
 import android.os.Build
 import android.telephony.SmsManager
 import com.gonodono.smssender.BuildConfig
-import com.gonodono.smssender.data.Message
+import com.gonodono.smssender.database.Message
+import com.gonodono.smssender.internal.nameAndMessage
 
 internal const val ACTION_SMS_SENT =
     "${BuildConfig.APPLICATION_ID}.action.SMS_SENT"
@@ -18,42 +19,48 @@ internal const val ACTION_SMS_DELIVERED =
 internal const val EXTRA_IS_LAST_PART =
     "${BuildConfig.APPLICATION_ID}.extra.IS_LAST_PART"
 
-internal fun Context.getSmsManager(): SmsManager = when {
-    Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
+internal fun Context.getSmsManager(): SmsManager =
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
         getSystemService(SmsManager::class.java)
+    } else {
+        @Suppress("DEPRECATION") SmsManager.getDefault()
     }
-    else -> @Suppress("DEPRECATION") SmsManager.getDefault()
+
+internal sealed interface SmsSendResult {
+
+    data object Success : SmsSendResult
+
+    sealed interface Error : SmsSendResult
+
+    data class DataError(val exception: IllegalArgumentException) : Error {
+        override fun toString(): String = exception.nameAndMessage()
+    }
+
+    data class FatalError(val exception: Exception) : Error {
+        override fun toString(): String = exception.nameAndMessage()
+    }
 }
 
-internal sealed class SendResult {
-    data object Success : SendResult()
-    data class Error(val e: Throwable) : SendResult() {
-        override fun toString() = "${e.javaClass.simpleName}: ${e.message}"
-    }
-}
-
-internal fun sendMessage(context: Context, message: Message): SendResult {
+internal fun sendMessage(context: Context, message: Message): SmsSendResult {
     val manager = context.getSmsManager()
     val parts = manager.divideMessage(message.body)
-    val sendIntents = arrayListOf<PendingIntent>()
+    val sentIntents = arrayListOf<PendingIntent>()
     val deliveryIntents = arrayListOf<PendingIntent?>()
 
-    for (partNumber in 1..parts.size) {
-        val isLastPart = partNumber == parts.size
-        sendIntents += PendingIntent.getBroadcast(
-            context,
-            partNumber,
-            createSendIntent(message.id, context, isLastPart),
-            RESULT_FLAGS
-        )
-        deliveryIntents += if (isLastPart) {
-            PendingIntent.getBroadcast(
-                context,
-                0,
-                createDeliveryIntent(context, message.id),
-                RESULT_FLAGS
-            )
-        } else null
+    for (partIndex in parts.indices) {
+        val isLastPart = partIndex == parts.lastIndex
+
+        val sent = createSentIntent(message.id, context, isLastPart)
+        sentIntents +=
+            PendingIntent.getBroadcast(context, partIndex, sent, RESULT_FLAGS)
+
+        deliveryIntents +=
+            if (isLastPart) {
+                val delivery = createDeliveryIntent(context, message.id)
+                PendingIntent.getBroadcast(context, 0, delivery, RESULT_FLAGS)
+            } else {
+                null
+            }
     }
 
     return try {
@@ -61,16 +68,18 @@ internal fun sendMessage(context: Context, message: Message): SendResult {
             message.address,
             null,
             parts,
-            sendIntents,
+            sentIntents,
             deliveryIntents
         )
-        SendResult.Success
+        SmsSendResult.Success
+    } catch (e: IllegalArgumentException) {
+        SmsSendResult.DataError(e)
     } catch (e: Exception) {
-        SendResult.Error(e)
+        SmsSendResult.FatalError(e)
     }
 }
 
-private fun createSendIntent(
+private fun createSentIntent(
     messageId: Int,
     context: Context,
     isLastPart: Boolean
@@ -78,22 +87,17 @@ private fun createSendIntent(
     .setAction(ACTION_SMS_SENT)
     .putExtra(EXTRA_IS_LAST_PART, isLastPart)
 
-// internal for use in fake delivery reporting
 internal fun createDeliveryIntent(
     context: Context,
     messageId: Int
 ) = createResultIntent(context, messageId)
     .setAction(ACTION_SMS_DELIVERED)
 
-private fun createResultIntent(
-    context: Context,
-    messageId: Int
-) = Intent(
-    null,
-    Uri.fromParts("app", BuildConfig.APPLICATION_ID, messageId.toString()),
-    context,
-    SmsResultReceiver::class.java
-)
+private fun createResultIntent(context: Context, messageId: Int): Intent {
+    val id = messageId.toString()
+    val uri = Uri.fromParts("app", BuildConfig.APPLICATION_ID, id)
+    return Intent(null, uri, context, SmsResultReceiver::class.java)
+}
 
 private val RESULT_FLAGS =
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
