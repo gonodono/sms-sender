@@ -23,6 +23,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.gonodono.smssender.UiState
+import com.gonodono.smssender.model.isFailed
+import com.gonodono.smssender.model.isQueued
 
 @Composable
 internal fun TextBox(message: String) =
@@ -73,11 +75,15 @@ internal fun ButtonPanel(
     ) {
         Row(horizontalArrangement = Arrangement.spacedBy(20.dp)) {
             Button(queueMessages, true, "Queue messages")
-            val sendEnabled = uiState.queuedCount > 0 && !uiState.isSending
-            Button(startSend, sendEnabled, "Start send")
+
+            val canSend = !uiState.isSending &&
+                    uiState.messages.any { it.isQueued() }
+            Button(startSend, canSend, "Start send")
         }
         Row(horizontalArrangement = Arrangement.spacedBy(20.dp)) {
-            Button(resetFailed, uiState.failedCount > 0, "Reset failed")
+            val hasFailed = uiState.messages.any { it.isFailed() }
+            Button(resetFailed, hasFailed, "Reset failed")
+
             Button(cancelSend, uiState.isSending, "Cancel send")
         }
     }

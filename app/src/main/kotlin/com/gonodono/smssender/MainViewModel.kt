@@ -3,11 +3,10 @@ package com.gonodono.smssender
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.gonodono.smssender.database.DeliveryStatus
-import com.gonodono.smssender.database.Message
-import com.gonodono.smssender.database.SendStatus
 import com.gonodono.smssender.internal.ExampleData
 import com.gonodono.smssender.internal.hasSmsPermissions
+import com.gonodono.smssender.model.Message
+import com.gonodono.smssender.model.SendStatus
 import com.gonodono.smssender.repository.SmsSenderRepository
 import com.gonodono.smssender.work.SmsSendWorker
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -29,16 +28,14 @@ internal class MainViewModel @Inject constructor(
     val uiState: Flow<UiState> = combine(
         hasPermissions,
         repository.allMessages,
-        SmsSendWorker.workInfos(context)
-    ) { hasPermissions, messages, workInfos ->
+        SmsSendWorker.workerState(context)
+    ) { hasPermissions, messages, workerState ->
         if (hasPermissions) {
             UiState.Active(
-                messages.map { it.toMessageInfo() },
-                messages.count { it.isQueued },
-                messages.count { it.isFailed },
-                SmsSendWorker.isSending(workInfos),
-                SmsSendWorker.isCancelled(workInfos),
-                SmsSendWorker.lastError(workInfos)
+                messages,
+                workerState.isSending,
+                workerState.isCancelled,
+                workerState.lastError
             )
         } else {
             UiState.NoPermissions
@@ -77,33 +74,9 @@ internal sealed interface UiState {
     data object NoPermissions : UiState
 
     data class Active(
-        val messages: List<MessageInfo>,
-        val queuedCount: Int,
-        val failedCount: Int,
+        val messages: List<Message>,
         val isSending: Boolean,
         val isCancelled: Boolean,
         val lastError: String?
     ) : UiState
 }
-
-internal class MessageInfo(
-    val id: String,
-    val address: String,
-    val sendStatus: String,
-    val deliveryStatus: String
-)
-
-private fun Message.toMessageInfo() =
-    MessageInfo(
-        id.toString(),
-        address,
-        sendStatus.toString(),
-        deliveryStatus.toString()
-    )
-
-private val Message.isQueued: Boolean
-    get() = sendStatus == SendStatus.Queued
-
-private val Message.isFailed: Boolean
-    get() = sendStatus == SendStatus.Failed ||
-            deliveryStatus == DeliveryStatus.Failed

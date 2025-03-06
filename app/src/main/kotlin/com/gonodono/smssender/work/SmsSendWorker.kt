@@ -7,7 +7,6 @@ import androidx.work.ExistingWorkPolicy
 import androidx.work.ForegroundInfo
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.OutOfQuotaPolicy
-import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import androidx.work.workDataOf
@@ -16,6 +15,7 @@ import com.gonodono.smssender.repository.SmsSenderRepository
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 
 @HiltWorker
 class SmsSendWorker @AssistedInject constructor(
@@ -57,18 +57,17 @@ class SmsSendWorker @AssistedInject constructor(
                 .enqueueUniqueWork(WORK_NAME, ExistingWorkPolicy.KEEP, request)
         }
 
-        fun workInfos(context: Context): Flow<List<WorkInfo>> =
+        fun workerState(context: Context): Flow<WorkerState> =
             WorkManager.getInstance(context)
                 .getWorkInfosForUniqueWorkFlow(WORK_NAME)
-
-        fun isSending(workInfos: List<WorkInfo>): Boolean =
-            workInfos.firstOrNull()?.state?.isFinished == false
-
-        fun isCancelled(workInfos: List<WorkInfo>): Boolean =
-            workInfos.firstOrNull()?.outputData
-                ?.getBoolean(CANCELLED_KEY, false) == true
-
-        fun lastError(workInfos: List<WorkInfo>): String? =
-            workInfos.firstOrNull()?.outputData?.getString(ERROR_KEY)
+                .map { workInfos ->
+                    val info = workInfos.firstOrNull()
+                    val data = info?.outputData
+                    WorkerState(
+                        info?.state?.isFinished == false,
+                        data?.getBoolean(CANCELLED_KEY, false) == true,
+                        data?.getString(ERROR_KEY)
+                    )
+                }
     }
 }

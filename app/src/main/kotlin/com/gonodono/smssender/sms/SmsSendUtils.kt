@@ -7,8 +7,8 @@ import android.net.Uri
 import android.os.Build
 import android.telephony.SmsManager
 import com.gonodono.smssender.BuildConfig
-import com.gonodono.smssender.database.Message
 import com.gonodono.smssender.internal.nameAndMessage
+import com.gonodono.smssender.model.Message
 
 internal const val ACTION_SMS_SENT =
     "${BuildConfig.APPLICATION_ID}.action.SMS_SENT"

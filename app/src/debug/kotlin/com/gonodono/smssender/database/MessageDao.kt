@@ -16,5 +16,5 @@ interface MessageDao : BaseMessageDao {
     suspend fun checkForFakeDeliveryReport(
         address: String,
         body: String
-    ): Message?
+    ): MessageEntity?
 }

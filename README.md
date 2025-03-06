@@ -9,7 +9,7 @@ results mechanism given in
 The design is a modern update to the classic pattern that uses a `Service` to
 send messages queued through a `ContentProvider` or local `SQLiteDatabase`.
 
-The database<sup>\*</sup> here is managed through Room, and its schema comprises
+The database here is managed through Room, and its schema comprises
 a single entity `Message` and the corresponding DAO. On top of the usual CRUD
 operations, `MessageDao` also provides a `Flow` on a query for the oldest queued
 `Message`, greatly simplifying the send routine.
@@ -30,13 +30,6 @@ buttons.
 alt="Screenshots of a running send, and a subsequent failed send." 
 width="30%" />
 </p>
-
----
-
-<sup><sup>\*</sup> In order to keep this example relatively simple and easily
-adaptable, the `database` classes currently serve as the data and the model too.
-In a real app, you'll probably want to decouple and reorganize things to fit
-your design.</sup>
 
 ### Fake delivery reports
 

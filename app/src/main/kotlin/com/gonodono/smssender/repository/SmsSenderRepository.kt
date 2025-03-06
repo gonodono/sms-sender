@@ -5,11 +5,14 @@ import android.content.Context
 import android.content.Intent
 import android.provider.Telephony.Sms
 import android.telephony.SmsMessage
-import com.gonodono.smssender.database.DeliveryStatus
-import com.gonodono.smssender.database.Message
-import com.gonodono.smssender.database.SendStatus
+import com.gonodono.smssender.database.MessageEntity
 import com.gonodono.smssender.database.SmsSenderDatabase
+import com.gonodono.smssender.database.toModel
 import com.gonodono.smssender.internal.log
+import com.gonodono.smssender.model.DeliveryStatus
+import com.gonodono.smssender.model.Message
+import com.gonodono.smssender.model.SendStatus
+import com.gonodono.smssender.model.toEntity
 import com.gonodono.smssender.sms.EXTRA_IS_LAST_PART
 import com.gonodono.smssender.sms.SmsSendResult
 import com.gonodono.smssender.sms.sendMessage
@@ -22,6 +25,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.transformWhile
@@ -39,10 +43,11 @@ class SmsSenderRepository(
 
     private val messageDao = database.messageDao
 
-    val allMessages: Flow<List<Message>> = messageDao.allMessages
+    val allMessages: Flow<List<Message>> =
+        messageDao.allMessages.map { it.map(MessageEntity::toModel) }
 
     suspend fun insertMessages(messages: List<Message>) =
-        messageDao.insertMessages(messages)
+        messageDao.insertMessages(messages.map(Message::toEntity))
 
     fun startSend() = SmsSendWorker.enqueue(context)
 
@@ -88,7 +93,7 @@ class SmsSenderRepository(
                     fatalError.isError() -> false
                     isSendCancelled -> false
                     message == null -> false
-                    else -> true.also { emit(message) }
+                    else -> true.also { emit(message.toModel()) }
                 }
             }
             .onEach { message ->

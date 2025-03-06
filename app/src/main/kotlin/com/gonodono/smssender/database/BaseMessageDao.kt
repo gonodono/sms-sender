@@ -3,13 +3,15 @@ package com.gonodono.smssender.database
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.Query
+import com.gonodono.smssender.model.DeliveryStatus
+import com.gonodono.smssender.model.SendStatus
 import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface BaseMessageDao {
 
     @get:Query("SELECT * FROM messages")
-    val allMessages: Flow<List<Message>>
+    val allMessages: Flow<List<MessageEntity>>
 
     @get:Query(
         """
@@ -19,10 +21,10 @@ interface BaseMessageDao {
         LIMIT 1
         """
     )
-    val nextQueuedMessage: Flow<Message?>
+    val nextQueuedMessage: Flow<MessageEntity?>
 
     @Insert
-    suspend fun insertMessages(messages: List<Message>)
+    suspend fun insertMessages(messages: List<MessageEntity>)
 
     @Query(
         """

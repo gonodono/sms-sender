@@ -10,7 +10,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import com.gonodono.smssender.MessageInfo
+import com.gonodono.smssender.model.Message
 
 @Composable
 internal fun ColumnHeaders() {
@@ -21,8 +21,13 @@ internal fun ColumnHeaders() {
 }
 
 @Composable
-internal fun MessageItem(info: MessageInfo) =
-    SimpleItem(info.id, info.address, info.sendStatus, info.deliveryStatus)
+internal fun MessageItem(message: Message) =
+    SimpleItem(
+        message.id.toString(),
+        message.address,
+        message.sendStatus.toString(),
+        message.deliveryStatus.toString()
+    )
 
 @Composable
 private fun SimpleItem(vararg texts: String) = Row {
