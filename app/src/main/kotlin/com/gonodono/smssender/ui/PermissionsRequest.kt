@@ -11,7 +11,7 @@ import androidx.compose.runtime.setValue
 import com.gonodono.smssender.sms.SmsPermissions
 
 @Composable
-internal fun PermissionsRequest(onGranted: () -> Unit) {
+fun PermissionsRequest(onGranted: () -> Unit) {
     var askedAndDenied by remember { mutableStateOf(false) }
     TextBox("Permissions ${if (askedAndDenied) "denied" else "required"}")
 

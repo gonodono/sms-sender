@@ -5,8 +5,8 @@ import android.content.Context
 import android.content.Intent
 import android.provider.Telephony.Sms
 import android.telephony.PhoneNumberUtils
+import com.gonodono.smssender.ExampleData
 import com.gonodono.smssender.database.SmsSenderDatabase
-import com.gonodono.smssender.internal.ExampleData
 import com.gonodono.smssender.internal.doAsync
 import com.gonodono.smssender.internal.log
 import com.gonodono.smssender.internal.logInvalidBroadcast

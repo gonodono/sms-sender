@@ -13,7 +13,7 @@ import androidx.compose.ui.unit.dp
 import com.gonodono.smssender.UiState
 
 @Composable
-internal fun MainContent(
+fun MainContent(
     uiState: UiState.Active,
     queueMessages: () -> Unit,
     startSend: () -> Unit,

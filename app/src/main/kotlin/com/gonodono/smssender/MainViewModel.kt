@@ -3,12 +3,14 @@ package com.gonodono.smssender
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.gonodono.smssender.internal.ExampleData
 import com.gonodono.smssender.internal.hasSmsPermissions
 import com.gonodono.smssender.model.Message
 import com.gonodono.smssender.model.SendStatus
+import com.gonodono.smssender.model.isFailed
+import com.gonodono.smssender.model.isQueued
 import com.gonodono.smssender.repository.SmsSenderRepository
 import com.gonodono.smssender.work.SmsSendWorker
+import com.gonodono.smssender.work.WorkerState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
@@ -18,7 +20,7 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-internal class MainViewModel @Inject constructor(
+class MainViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
     private val repository: SmsSenderRepository
 ) : ViewModel() {
@@ -27,16 +29,14 @@ internal class MainViewModel @Inject constructor(
 
     val uiState: Flow<UiState> = combine(
         hasPermissions,
-        repository.allMessages,
+        repository.messages,
         SmsSendWorker.workerState(context)
     ) { hasPermissions, messages, workerState ->
         if (hasPermissions) {
-            UiState.Active(
-                messages,
-                workerState.isSending,
-                workerState.isCancelled,
-                workerState.lastError
-            )
+            val isIdle = !workerState.isSending
+            val canSend = isIdle && messages.any { it.isQueued() }
+            val canReset = messages.any { it.isFailed() }
+            UiState.Active(messages, workerState, canSend, canReset)
         } else {
             UiState.NoPermissions
         }
@@ -67,7 +67,7 @@ internal class MainViewModel @Inject constructor(
     }
 }
 
-internal sealed interface UiState {
+sealed interface UiState {
 
     data object Initial : UiState
 
@@ -75,8 +75,8 @@ internal sealed interface UiState {
 
     data class Active(
         val messages: List<Message>,
-        val isSending: Boolean,
-        val isCancelled: Boolean,
-        val lastError: String?
+        val workerState: WorkerState,
+        val canSendQueued: Boolean,
+        val canResetFailed: Boolean
     ) : UiState
 }

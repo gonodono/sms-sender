@@ -13,15 +13,15 @@ import androidx.compose.ui.text.style.TextOverflow
 import com.gonodono.smssender.model.Message
 
 @Composable
-internal fun ColumnHeaders() {
+fun ColumnHeaders() {
     val bold = TextStyle.Default.copy(fontWeight = FontWeight.Bold)
     CompositionLocalProvider(LocalTextStyle provides bold) {
-        SimpleItem("ID", "Address", "Sent", "Delivery")
+        SimpleItem("ID", "Address", "Send", "Delivery")
     }
 }
 
 @Composable
-internal fun MessageItem(message: Message) =
+fun MessageItem(message: Message) =
     SimpleItem(
         message.id.toString(),
         message.address,

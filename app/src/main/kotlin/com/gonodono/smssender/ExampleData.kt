@@ -1,6 +1,7 @@
-package com.gonodono.smssender.internal
+package com.gonodono.smssender
 
-internal object ExampleData {
+@Suppress("SpellCheckingInspection")
+object ExampleData {
 
     const val ADDRESS = "5554"
 

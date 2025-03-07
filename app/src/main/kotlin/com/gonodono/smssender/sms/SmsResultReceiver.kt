@@ -15,18 +15,7 @@ class SmsResultReceiver : BroadcastReceiver() {
     lateinit var repository: SmsSenderRepository
 
     override fun onReceive(context: Context, intent: Intent) {
-        val messageId = intent.data?.fragment?.toIntOrNull() ?: return
-
-        when (intent.action) {
-            ACTION_SMS_SENT -> {
-                repository.handleSendResult(intent, messageId, resultCode)
-            }
-            ACTION_SMS_DELIVERED -> {
-                repository.handleDeliveryResult(intent, messageId)
-            }
-            else -> {
-                logInvalidBroadcast(intent)
-            }
-        }
+        val isValidResult = repository.handleSmsResult(intent, resultCode)
+        if (!isValidResult) logInvalidBroadcast(intent)
     }
 }

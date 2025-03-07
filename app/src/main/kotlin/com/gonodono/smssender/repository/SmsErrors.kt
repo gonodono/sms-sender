@@ -2,7 +2,6 @@ package com.gonodono.smssender.repository
 
 import android.annotation.SuppressLint
 import android.telephony.SmsManager
-import java.lang.reflect.Field
 
 // Value of SmsManager.RESULT_ERROR_NONE, not available until API level 30.
 internal const val RESULT_ERROR_NONE = 0
@@ -48,19 +47,20 @@ internal val FatalSmsErrors = intArrayOf(
 // real app, you'll probably want to create a list of actual string literals.
 internal fun errorCodeToString(value: Int): String {
     // This field doesn't exist on API levels < 30.
-    if (value == 0) return "RESULT_ERROR_NONE"
+    if (value == RESULT_ERROR_NONE) return "RESULT_ERROR_NONE"
 
     val name = try {
-        val fields: List<Field> =
-            resultFields ?: SmsManager::class.java
+        val errors: Map<Int?, String> =
+            errorMap ?: SmsManager::class.java
                 .declaredFields
                 .filter { it.name.startsWith("RESULT_") }
-                .also { resultFields = it }
-        fields.firstOrNull { it.get(null) as? Int == value }?.name
+                .associate { it.get(null) as? Int to it.name }
+                .also { errorMap = it }
+        errors[value]
     } catch (_: Exception) {
         null
     }
     return name ?: "Unknown error: $value"
 }
 
-private var resultFields: List<Field>? = null
+private var errorMap: Map<Int?, String>? = null

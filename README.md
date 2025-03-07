@@ -1,29 +1,29 @@
 # SMS Sender
 
 A complete working example to supplement the description of `SmsManager`'s
-results mechanism given in
-[this Stack Overflow answer](https://stackoverflow.com/a/24845193).
+results mechanism given in [this Stack Overflow answer][answer].
 
 ## Overview
 
 The design is a modern update to the classic pattern that uses a `Service` to
 send messages queued through a `ContentProvider` or local `SQLiteDatabase`.
 
-The database here is managed through Room, and its schema comprises
-a single entity `Message` and the corresponding DAO. On top of the usual CRUD
-operations, `MessageDao` also provides a `Flow` on a query for the oldest queued
-`Message`, greatly simplifying the send routine.
+The database here is managed through Room, and it comprises a single [`Entity`
+for `Message`s][Entity] and a corresponding DAO. On top of a few usual CRUD
+operations, [`MessageDao`][Dao] also provides a `Flow` on a query for the oldest
+queued message, greatly simplifying the send routine.
 
-That routine is executed in a `Worker` which is started immediately for our
-demonstration, but which could easily be scheduled for whenever, with whatever
-constraints are needed.
+That routine is executed in [a `Worker`][Worker] which is started immediately
+for our demonstration, but which could easily be scheduled for whenever, with
+whatever constraints are needed.
 
-The actual work for the send is handled in `SmsSendRepository`. We use Hilt to
-maintain a singleton that we also inject into the statically-registered results
-Receiver, allowing us to keep the overall logic in one place.
+The actual work for the send is handled in [`SmsSendRepository`][Repository]. We
+use Hilt to maintain a singleton that we also inject into the
+statically-registered results Receiver, allowing us to keep the overall logic in
+one place.
 
-The UI is done in minimal Compose, and is basically just text logs with a few
-buttons.
+The [minimal UI][ui] is implemented in Compose, and it's basically just text
+logs with a few buttons.
 
 <p align="center">
 <img src="images/screenshots.png" 
@@ -41,8 +41,8 @@ to itself. It's nothing more than a regular `BroadcastReceiver` registered for
 match, sends the same kind of broadcast you would get in a real run, complete
 with valid result PDU attached as an extra.
 
-This was mainly meant to make testing on the emulators more convenient, but
-it should also work on a real device sending to itself, if the carrier doesn't
+This was mainly meant to make testing on the emulators more convenient, but it
+should also work on a real device sending to itself, if the carrier doesn't
 provide delivery reports. If it's running API level 31 or newer, though, you'll
 have to remove the disabling attributes in [the debug manifest][debug-manifest],
 and the SDK check in [the debug permissions][debug-permissions].
@@ -76,6 +76,18 @@ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
-  [debug-manifest]: app/src/debug/AndroidManifest.xml
+[answer]: https://stackoverflow.com/a/24845193
 
-  [debug-permissions]: app/src/debug/kotlin/com/gonodono/smssender/sms/SmsPermissions.kt
+[Entity]: app/src/main/kotlin/com/gonodono/smssender/database/MessageEntity.kt
+
+[Dao]: app/src/main/kotlin/com/gonodono/smssender/database/BaseMessageDao.kt
+
+[Worker]: app/src/main/kotlin/com/gonodono/smssender/work/SmsSendWorker.kt
+
+[Repository]: app/src/main/kotlin/com/gonodono/smssender/repository/SmsSenderRepository.kt
+
+[ui]: app/src/main/kotlin/com/gonodono/smssender/ui
+
+[debug-manifest]: app/src/debug/AndroidManifest.xml
+
+[debug-permissions]: app/src/debug/kotlin/com/gonodono/smssender/sms/SmsPermissions.kt
