@@ -73,8 +73,8 @@ class SmsSenderRepository(
     private var sendJob: Job? = null
 
     suspend fun doSend(): SendResult {
-        fatalError = FatalError.None
         isSendCancelled = false
+        fatalError = FatalError.None
 
         suspendCoroutine { continuation ->
             sendJob = scope.launch { sendMessages(continuation) }
@@ -124,7 +124,7 @@ class SmsSenderRepository(
         scope.launch(sendUpdateExceptionHandler) {
             val id = message.id
             val error = result.toString()
-            messageDao.updateSend(id, SendStatus.Failed, error)
+            messageDao.updateSendStatus(id, SendStatus.Failed, error)
         }
     }
 
@@ -177,7 +177,7 @@ class SmsSenderRepository(
         val status = if (isError) SendStatus.Failed else SendStatus.Complete
         val error = if (isError) errorCodeToString(errorCode) else null
 
-        messageDao.updateSend(messageId, status, error)
+        messageDao.updateSendStatus(messageId, status, error)
     }
 
     // Delivery results only fire for the last message part.
@@ -185,7 +185,7 @@ class SmsSenderRepository(
         intent: Intent,
         messageId: Int
     ) = scope.launch(deliveryUpdateExceptionHandler) {
-        // Status must be read from the SmsMessage extra, not resultCode.
+        // Status must be read from the SmsMessage extra, not the resultCode.
         val pdu = intent.getByteArrayExtra("pdu")
         val format = intent.getStringExtra("format")
         val message = SmsMessage.createFromPdu(pdu, format)
@@ -202,7 +202,7 @@ class SmsSenderRepository(
             if (status == DeliveryStatus.Failed) smsStatus.toString()
             else null
 
-        messageDao.updateDelivery(messageId, status, error)
+        messageDao.updateDeliveryStatus(messageId, status, error)
     }
 
     // Delivery results aren't vital to the flow, so we just log errors here.

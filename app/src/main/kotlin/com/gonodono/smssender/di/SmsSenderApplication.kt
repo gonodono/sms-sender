@@ -1,4 +1,4 @@
-package com.gonodono.smssender.injection
+package com.gonodono.smssender.di
 
 import android.app.Application
 import androidx.hilt.work.HiltWorkerFactory

@@ -7,14 +7,18 @@ import com.gonodono.smssender.model.DeliveryStatus
 import com.gonodono.smssender.model.SendStatus
 import kotlinx.coroutines.flow.Flow
 
-// This DAO has everything needed for normal usage. However, the fake delivery
-// reports require an additional feature, so this base is simply extended in
-// the release build, and the debug one extends it and adds a reset function.
+// This DAO has everything necessary for normal use. However, the fake delivery
+// reports require an additional feature, so the release build simply extends
+// this base, but the debug version adds another query for the fake reports.
 
 @Dao
 interface BaseMessageDao {
 
-    @get:Query("SELECT * FROM messages")
+    @get:Query(
+        """
+        SELECT * FROM messages
+        """
+    )
     val messages: Flow<List<MessageEntity>>
 
     @get:Query(
@@ -37,7 +41,7 @@ interface BaseMessageDao {
         WHERE id=:id
         """
     )
-    suspend fun updateSend(
+    suspend fun updateSendStatus(
         id: Int,
         sendStatus: SendStatus,
         sendError: String?
@@ -50,7 +54,7 @@ interface BaseMessageDao {
         WHERE id=:id
         """
     )
-    suspend fun updateDelivery(
+    suspend fun updateDeliveryStatus(
         id: Int,
         deliveryStatus: DeliveryStatus,
         deliveryError: String?

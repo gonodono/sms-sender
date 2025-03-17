@@ -10,7 +10,7 @@
     <uses-permission android:name="android.permission.SEND_SMS" />
 
     <application
-        android:name=".injection.SmsSenderApplication"
+        android:name=".di.SmsSenderApplication"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name">
 

@@ -3,6 +3,7 @@ package com.gonodono.smssender.work
 import android.content.Context
 import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
+import androidx.work.Data
 import androidx.work.ExistingWorkPolicy
 import androidx.work.ForegroundInfo
 import androidx.work.OneTimeWorkRequestBuilder
@@ -25,18 +26,15 @@ class SmsSendWorker @AssistedInject constructor(
 ) : CoroutineWorker(context, workerParams) {
 
     // The demo always returns Success to avoid auto-rescheduling.
-    override suspend fun doWork(): Result =
-        when (val sendResult = repository.doSend()) {
-            SendResult.Completed -> {
-                Result.success()
-            }
-            SendResult.Cancelled -> {
-                Result.success(workDataOf(CANCELLED_KEY to true))
-            }
-            is SendResult.Error -> {
-                Result.success(workDataOf(ERROR_KEY to sendResult.toString()))
-            }
+    override suspend fun doWork(): Result {
+        val result = repository.doSend()
+        val data = when (result) {
+            SendResult.Completed -> Data.EMPTY
+            SendResult.Cancelled -> workDataOf(CANCELLED_KEY to true)
+            is SendResult.Error -> workDataOf(ERROR_KEY to result.toString())
         }
+        return Result.success(data)
+    }
 
     override suspend fun getForegroundInfo(): ForegroundInfo =
         ForegroundInfo(0, createNotification(applicationContext))
@@ -44,9 +42,7 @@ class SmsSendWorker @AssistedInject constructor(
     companion object {
 
         private const val CANCELLED_KEY = "cancelled"
-
         private const val ERROR_KEY = "error"
-
         private const val WORK_NAME = "sendSms"
 
         fun enqueue(context: Context) {
